@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../styles/global.css";
 import logo from "../assets/logo_rh_master.png";
-import { useNavigate } from "react-router-dom"; // necessário para redirecionamento
+import { useNavigate } from "react-router-dom";
 
 export default function Cadastro() {
   const [nome, setNome] = useState("");
@@ -10,20 +10,46 @@ export default function Cadastro() {
   const [idade, setIdade] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [cargo, setCargo] = useState("Administrador"); // cargo selecionado
+  const [cargo, setCargo] = useState("Administrador");
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ nome, cpf, empresa, idade, email, senha, cargo });
-    alert("Cadastro realizado com sucesso!");
 
-    // Redirecionamento automático conforme cargo
-    if (cargo === "Administrador") {
-      navigate("/admin"); // tela do administrador
-    } else {
-      navigate("/colaborador"); // tela do colaborador
+    try {
+      const response = await fetch("http://localhost:3000/usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome,
+          cpf,
+          empresa,
+          idade,
+          email,
+          senha,
+          cargo,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        alert(err.error);
+        return;
+      }
+
+      const data = await response.json();
+      alert("Cadastro realizado com sucesso!");
+
+      // Redireciona conforme cargo
+      if (cargo === "Administrador") {
+        navigate("/admin");
+      } else {
+        navigate("/colaborador");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao conectar com o servidor.");
     }
   };
 

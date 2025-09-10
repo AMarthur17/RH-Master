@@ -1,7 +1,9 @@
-const express = require("express");
+// src/routes/index.js
+import express from "express";
+import usuariosRoutes from "./usuarios.js";
+
 const router = express.Router();
 
-router.get("/ping", (req, res) => res.json({ ok: true, message: "pong" }));
-router.use("/usuarios", require("./usuarios"));
+router.use("/usuario", usuariosRoutes);
 
-module.exports = router;
+export default router;

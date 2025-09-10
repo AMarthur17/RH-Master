@@ -1,13 +1,24 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const routes = require("./routes");
+// src/server.js
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import routes from "./routes/index.js";
+
+dotenv.config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", routes);
+// Rotas
+app.use("/", routes);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
+// Rota teste
+app.get("/teste", (req, res) => {
+  res.send("Servidor rodando!");
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Servidor rodando na porta ${process.env.PORT}`);
+});

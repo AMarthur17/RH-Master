@@ -1,16 +1,14 @@
-const { Pool } = require("pg");
+// src/db.js
+import pkg from "pg";
+import dotenv from "dotenv";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  `postgres://${process.env.PGUSER || "postgres"}:${
-    process.env.PGPASSWORD || ""
-  }` +
-    `@${process.env.PGHOST || "localhost"}:${process.env.PGPORT || 5432}/${
-      process.env.PGDATABASE || "rh_master"
-    }`;
+dotenv.config();
+const { Pool } = pkg;
 
-const pool = new Pool({ connectionString });
-
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};
+export const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
