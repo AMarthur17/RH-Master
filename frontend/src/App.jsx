@@ -1,18 +1,20 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import Cadastro from "./pages/cadastro";
-import TelaAdministrador from "./pages/TelaAdministrador";
+import Cadastro from "./pages/Cadastro";
+import Login from "./pages/Login";
 import TelaColaborador from "./pages/TelaColaborador";
+import TelaAdministrador from "./pages/TelaAdministrador";
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} /> {/* Tela inicial */}
+        <Route path="/" element={<Home />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/admin" element={<TelaAdministrador />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/colaborador" element={<TelaColaborador />} />
+        <Route path="/administrador" element={<TelaAdministrador />} />
       </Routes>
     </Router>
   );

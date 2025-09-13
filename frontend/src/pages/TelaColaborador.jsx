@@ -1,5 +1,93 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import "../styles/global.css";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function TelaColaborador() {
-  return <h2>Bem-vindo, Colaborador!</h2>;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const usuario = location.state?.usuario;
+  const usuarioId = usuario?.id;
+
+  const [historico, setHistorico] = useState([]);
+  const [status, setStatus] = useState("");
+
+  const buscarHistorico = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/registro-ponto/${usuarioId}`);
+      if (!res.ok) throw new Error("Falha ao buscar histórico");
+      const data = await res.json();
+      setHistorico(data);
+    } catch (err) {
+      console.error(err);
+      setStatus("Erro ao carregar histórico");
+    }
+  };
+
+  useEffect(() => {
+    if (!usuarioId) return navigate("/login");
+    buscarHistorico();
+  }, [usuarioId]);
+
+  const baterPonto = async (tipo) => {
+    try {
+      const res = await fetch("http://localhost:3000/registro-ponto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario_id: usuarioId, tipo }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error);
+        return;
+      }
+
+      const data = await res.json();
+      alert(`Ponto registrado: ${data.registro.tipo} às ${data.registro.data_hora}`);
+      setStatus(`Último ponto registrado: ${data.registro.tipo} às ${data.registro.data_hora}`);
+      buscarHistorico();
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao registrar ponto.");
+    }
+  };
+
+  return (
+    <div className="cadastro-container">
+      <div className="cadastro-card">
+        <h2>Bem-vindo, {usuario?.nome}!</h2>
+
+        <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+          <button className="btn-gradient" onClick={() => baterPonto("entrada")}>Entrada</button>
+          <button className="btn-gradient" onClick={() => baterPonto("saida")}>Saída</button>
+        </div>
+
+        {status && <p style={{ marginTop: "20px", fontWeight: "bold" }}>{status}</p>}
+
+        <h3 style={{ marginTop: "30px" }}>Histórico de Pontos:</h3>
+        {historico.length === 0 ? (
+          <p>Nenhum registro encontrado.</p>
+        ) : (
+          <table style={{ margin: "0 auto", marginTop: "10px", color: "#fff" }}>
+            <thead>
+              <tr>
+                <th style={{ padding: "8px 12px" }}>Tipo</th>
+                <th style={{ padding: "8px 12px" }}>Data e Hora</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historico.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ padding: "6px 12px" }}>{item.tipo}</td>
+                  <td style={{ padding: "6px 12px" }}>{new Date(item.data_hora).toLocaleString("pt-BR")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <button style={{ marginTop: "20px" }} className="btn-gradient" onClick={() => navigate(-1)}>Voltar</button>
+      </div>
+    </div>
+  );
 }
