@@ -25,12 +25,13 @@ export default function Login() {
       }
 
       const data = await response.json();
-
+      // Salva token JWT
+      localStorage.setItem("token", data.token);
       // Redireciona baseado no cargo
-      if (data.cargo === "Administrador") {
-        navigate("/administrador", { state: { usuario: data } });
+      if (data.usuario.cargo === "Administrador") {
+        navigate("/administrador", { state: { usuario: data.usuario } });
       } else {
-        navigate("/colaborador", { state: { usuario: data } });
+        navigate("/colaborador", { state: { usuario: data.usuario } });
       }
     } catch (err) {
       console.error(err);

@@ -58,12 +58,22 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Senha incorreta" });
     }
 
+    // Gerar JWT
+    const jwt = await import('jsonwebtoken');
+    const token = jwt.default.sign(
+      { id: usuario.id, perfil: usuario.cargo },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
     res.json({
-      id: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      cargo: usuario.cargo,
-      empresa: usuario.empresa,
+      token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        cargo: usuario.cargo,
+        empresa: usuario.empresa,
+      }
     });
   } catch (err) {
     console.error(err);

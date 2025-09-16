@@ -20,24 +20,35 @@ export const loginUsuario = async (data) => {
   return res.json();
 };
 
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const baterPonto = async (usuario_id, tipo) => {
   const res = await fetch(`${API_URL}/registro-ponto`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify({ usuario_id, tipo }),
   });
   if (!res.ok) throw await res.json();
   return res.json();
 };
 
+
 export const buscarHistorico = async (usuario_id) => {
-  const res = await fetch(`${API_URL}/registro-ponto/${usuario_id}`);
+  const res = await fetch(`${API_URL}/registro-ponto/${usuario_id}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao buscar histórico");
   return res.json();
 };
 
 export const buscarColaboradores = async (empresa) => {
-  const res = await fetch(`${API_URL}/registro-ponto/admin/${empresa}`);
+  const res = await fetch(`${API_URL}/registro-ponto/admin/${empresa}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao buscar colaboradores");
   return res.json();
 };

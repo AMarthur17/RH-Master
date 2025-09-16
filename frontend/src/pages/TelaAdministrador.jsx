@@ -7,7 +7,11 @@ export default function TelaAdministrador() {
   const handleRemoverDocumento = async (usuarioId, docId) => {
     if (!window.confirm("Tem certeza que deseja remover este documento?")) return;
     try {
-      const res = await fetch(`http://localhost:3000/documentos/${docId}`, { method: "DELETE" });
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error("Erro ao remover documento");
       // Atualiza lista após remoção
       buscarDocumentos(usuarioId);
@@ -80,7 +84,10 @@ export default function TelaAdministrador() {
         setUsuarioSelecionado(null);
         return;
       }
-      const res = await fetch(`http://localhost:3000/documentos/${usuario_id}`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:3000/documentos/${usuario_id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error("Erro ao buscar documentos");
       const docs = await res.json();
       setDocumentosUsuario((prev) => ({ ...prev, [usuario_id]: docs }));
@@ -207,9 +214,11 @@ export default function TelaAdministrador() {
                                 const formData = new FormData();
                                 formData.append("arquivo", normalizedFile);
                                 try {
+                                  const token = localStorage.getItem("token");
                                   const res = await fetch(`http://localhost:3000/documentos/${u.id}`, {
                                     method: "POST",
                                     body: formData,
+                                    headers: token ? { Authorization: `Bearer ${token}` } : {},
                                   });
                                   if (!res.ok) throw new Error("Erro ao fazer upload");
                                   alert("Documento enviado com sucesso!");

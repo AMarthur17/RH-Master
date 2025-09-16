@@ -1,6 +1,9 @@
 // src/routes/documentos.js
 import express from "express";
+import { autenticar } from "../middleware/auth.js";
+import { permitir } from "../middleware/rbac.js";
 import multer from "multer";
+import * as fs from "fs";
 import path from "path";
 import { pool } from "../db.js";
 
@@ -21,32 +24,30 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Rota de upload de documento
-router.post("/:usuario_id", upload.single("arquivo"), async (req, res) => {
+router.post("/:usuario_id", autenticar, permitir(["admin", "administrador"]), upload.single("arquivo"), async (req, res) => {
   const { usuario_id } = req.params;
-
+  console.log("[UPLOAD] Usuário:", usuario_id, "Arquivo:", req.file?.originalname, "Perfil:", req.user?.perfil);
   if (!req.file) {
+    console.log("[UPLOAD] Nenhum arquivo enviado");
     return res.status(400).json({ error: "Nenhum arquivo enviado." });
   }
-
   const nomeArquivo = req.file.originalname;
   const caminhoArquivo = req.file.filename;
-
   try {
     const result = await pool.query(
       `INSERT INTO documentos (usuario_id, nome_arquivo, caminho_arquivo)
        VALUES ($1, $2, $3) RETURNING *`,
       [usuario_id, nomeArquivo, caminhoArquivo]
     );
-
+    console.log("[UPLOAD] Documento salvo:", result.rows[0]);
     res.status(201).json({ documento: result.rows[0] });
   } catch (err) {
-    console.error(err);
+    console.error("[UPLOAD] Erro:", err);
     res.status(500).json({ error: "Erro ao salvar documento." });
   }
 });
-
 // Rota para listar documentos de um usuário
-router.get("/:usuario_id", async (req, res) => {
+router.get("/:usuario_id", autenticar, async (req, res) => {
   const { usuario_id } = req.params;
 
   try {
@@ -70,17 +71,19 @@ router.get("/:usuario_id", async (req, res) => {
 
 
 // Rota para remover documento
-import fs from "fs";
 
-router.delete("/:id", async (req, res) => {
+
+router.delete("/:id", autenticar, permitir(["admin", "administrador"]), async (req, res) => {
   const { id } = req.params;
   try {
+    console.log("[REMOVER] Documento id:", id, "Perfil:", req.user?.perfil);
     // Busca o caminho do arquivo
     const result = await pool.query(
       "SELECT caminho_arquivo FROM documentos WHERE id = $1",
       [id]
     );
     if (result.rows.length === 0) {
+      console.log("[REMOVER] Documento não encontrado");
       return res.status(404).json({ error: "Documento não encontrado." });
     }
     const caminhoArquivo = result.rows[0].caminho_arquivo;
@@ -91,12 +94,13 @@ router.delete("/:id", async (req, res) => {
     fs.unlink(filePath, (err) => {
       // Se não existir, ignora
       if (err && err.code !== "ENOENT") {
-        console.error("Erro ao remover arquivo físico:", err);
+        console.error("[REMOVER] Erro ao remover arquivo físico:", err);
       }
     });
+    console.log("[REMOVER] Documento removido:", caminhoArquivo);
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("[REMOVER] Erro:", err);
     res.status(500).json({ error: "Erro ao remover documento." });
   }
 });

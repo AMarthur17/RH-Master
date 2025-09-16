@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes/index.js";
-import documentosRouter from "./routes/documentos.js"; // 👈 ADICIONADO
+import documentosRouter from "./routes/documentos.js"; // 👈 CORRIGIDO
 
 dotenv.config();
 
