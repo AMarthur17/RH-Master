@@ -1,4 +1,3 @@
-// src/routes/usuarios.js
 import express from "express";
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
@@ -11,7 +10,9 @@ router.post("/", async (req, res) => {
     const { nome, cpf, empresa, idade, email, senha, cargo } = req.body;
 
     if (!nome || !cpf || !empresa || !idade || !email || !senha || !cargo) {
-      return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+      return res
+        .status(400)
+        .json({ error: "Todos os campos são obrigatórios." });
     }
 
     const hashedSenha = await bcrypt.hash(senha, 10);
@@ -22,11 +23,12 @@ router.post("/", async (req, res) => {
       RETURNING id, nome, email, cargo, empresa
     `;
     const values = [nome, cpf, empresa, idade, email, hashedSenha, cargo];
+
     const result = await pool.query(query, values);
 
     res.status(201).json({ usuario: result.rows[0] });
   } catch (error) {
-    console.error(error);
+    console.error("Erro no cadastro de usuário:", error);
     if (error.code === "23505") {
       res.status(409).json({ error: "CPF ou e-mail já cadastrado." });
     } else {
@@ -59,12 +61,13 @@ router.post("/login", async (req, res) => {
     }
 
     // Gerar JWT
-    const jwt = await import('jsonwebtoken');
+    const jwt = await import("jsonwebtoken");
     const token = jwt.default.sign(
       { id: usuario.id, perfil: usuario.cargo },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
     res.json({
       token,
       usuario: {
@@ -73,10 +76,10 @@ router.post("/login", async (req, res) => {
         email: usuario.email,
         cargo: usuario.cargo,
         empresa: usuario.empresa,
-      }
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Erro no login:", err);
     res.status(500).json({ error: "Erro no servidor" });
   }
 });
@@ -85,6 +88,7 @@ router.post("/login", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const { nome, empresa } = req.query;
+
     let query = "SELECT id, nome, email, empresa, cargo FROM usuario WHERE 1=1";
     const values = [];
 
@@ -101,7 +105,7 @@ router.get("/", async (req, res) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar usuários:", err);
     res.status(500).json({ error: "Erro ao buscar usuários" });
   }
 });

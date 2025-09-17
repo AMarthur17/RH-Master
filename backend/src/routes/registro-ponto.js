@@ -1,4 +1,3 @@
-// src/routes/registro-ponto.js
 import express from "express";
 import { pool } from "../db.js";
 
@@ -10,7 +9,21 @@ router.post("/", async (req, res) => {
     const { usuario_id, tipo } = req.body;
 
     if (!usuario_id || !tipo) {
-      return res.status(400).json({ error: "usuario_id e tipo são obrigatórios" });
+      return res
+        .status(400)
+        .json({ error: "usuario_id e tipo são obrigatórios" });
+    }
+
+    // Opcional: verificar se já bateu ponto do mesmo tipo hoje
+    const checkQuery = `
+      SELECT * FROM registro_ponto 
+      WHERE usuario_id = $1 AND tipo = $2 AND data_hora::date = CURRENT_DATE
+    `;
+    const checkResult = await pool.query(checkQuery, [usuario_id, tipo]);
+    if (checkResult.rows.length > 0) {
+      return res
+        .status(400)
+        .json({ error: `Ponto de ${tipo} já registrado hoje.` });
     }
 
     const query = `
@@ -18,12 +31,11 @@ router.post("/", async (req, res) => {
       VALUES ($1, $2)
       RETURNING *
     `;
-    const values = [usuario_id, tipo];
+    const result = await pool.query(query, [usuario_id, tipo]);
 
-    const result = await pool.query(query, values);
     res.status(201).json({ registro: result.rows[0] });
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao registrar ponto:", err);
     res.status(500).json({ error: "Erro ao registrar ponto" });
   }
 });
@@ -46,7 +58,7 @@ router.get("/:usuario_id", async (req, res) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar registros:", err);
     res.status(500).json({ error: "Erro ao buscar registros" });
   }
 });
