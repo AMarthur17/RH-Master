@@ -110,4 +110,81 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Atualizar usuário e registrar histórico
+router.put("/:id", async (req, res) => {
+  try {
+    const usuarioId = req.params.id;
+    const { nome, cpf, empresa, idade, email, senha, cargo, alterado_por } =
+      req.body;
+
+    const oldUser = await pool.query("SELECT * FROM usuario WHERE id = $1", [
+      usuarioId,
+    ]);
+    if (oldUser.rows.length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    const campos = { nome, cpf, empresa, idade, email, senha, cargo };
+    const atualizacoes = [];
+    const valores = [];
+    let idx = 1;
+
+    for (const campo in campos) {
+      if (campos[campo] !== undefined) {
+        if (campo === "senha") {
+          campos[campo] = await bcrypt.hash(campos[campo], 10);
+        }
+        atualizacoes.push(`${campo} = $${idx}`);
+        valores.push(campos[campo]);
+
+        // Registrar histórico se valor diferente
+        if (String(oldUser.rows[0][campo]) !== String(campos[campo])) {
+          await pool.query(
+            `INSERT INTO historico_usuario (usuario_id, campo_alterado, valor_antigo, valor_novo, alterado_por)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              usuarioId,
+              campo,
+              oldUser.rows[0][campo],
+              campos[campo],
+              alterado_por || 0,
+            ]
+          );
+        }
+        idx++;
+      }
+    }
+
+    if (atualizacoes.length === 0) {
+      return res.status(400).json({ error: "Nenhuma alteração enviada." });
+    }
+
+    const updateQuery = `UPDATE usuario SET ${atualizacoes.join(
+      ", "
+    )} WHERE id = $${idx} RETURNING *`;
+    valores.push(usuarioId);
+
+    const result = await pool.query(updateQuery, valores);
+    res.json({ usuario: result.rows[0] });
+  } catch (err) {
+    console.error("Erro ao atualizar usuário:", err);
+    res.status(500).json({ error: "Erro ao atualizar usuário" });
+  }
+});
+
+// Histórico de alterações de um usuário
+router.get("/:id/historico", async (req, res) => {
+  try {
+    const usuarioId = req.params.id;
+    const result = await pool.query(
+      "SELECT * FROM historico_usuario WHERE usuario_id = $1 ORDER BY data_hora DESC",
+      [usuarioId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Erro ao buscar histórico:", err);
+    res.status(500).json({ error: "Erro ao buscar histórico" });
+  }
+});
+
 export default router;
