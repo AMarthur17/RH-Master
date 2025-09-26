@@ -5,7 +5,7 @@ import { autenticar } from "../middleware/auth.js";
 const router = express.Router();
 
 // Registrar ponto
-router.post("/", async (req, res) => {
+router.post("/", autenticar, async (req, res) => {
   try {
     const { usuario_id, tipo } = req.body;
 

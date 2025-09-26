@@ -19,10 +19,21 @@ export default function TelaColaborador() {
 
   const buscarHistorico = async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:3000/registro-ponto/${usuarioId}`
+        `http://localhost:3000/registro-ponto/${usuarioId}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
-      if (!res.ok) throw new Error("Falha ao buscar histórico");
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert("Sessão expirada. Faça login novamente.");
+          navigate("/login");
+          return;
+        }
+        throw new Error("Falha ao buscar histórico");
+      }
       const data = await res.json();
       setHistorico(data);
     } catch (err) {
@@ -38,9 +49,13 @@ export default function TelaColaborador() {
 
   const baterPonto = async (tipo) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:3000/registro-ponto", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ usuario_id: usuarioId, tipo }),
       });
 
@@ -64,15 +79,40 @@ export default function TelaColaborador() {
     }
   };
 
-  // Simulação de edição de perfil (frontend apenas)
+  // Edição de perfil do colaborador
   const editarPerfil = async (e) => {
     e.preventDefault();
 
     try {
-      // Aqui depois faremos PUT no backend
-      console.log("Editando perfil:", { nome, email, senha });
-      alert("Perfil atualizado com sucesso (simulado)!");
+      const token = localStorage.getItem("token");
+      const updateData = { nome, email };
+      
+      // Só adiciona senha se foi preenchida
+      if (senha.trim()) {
+        updateData.senha = senha;
+      }
+
+      const res = await fetch(`http://localhost:3000/usuario/${usuarioId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert("Sessão expirada. Faça login novamente.");
+          navigate("/login");
+          return;
+        }
+        throw new Error("Erro ao atualizar perfil");
+      }
+
+      alert("Perfil atualizado com sucesso!");
       setEditando(false);
+      setSenha(""); // Limpa o campo senha
     } catch (err) {
       console.error(err);
       alert("Erro ao atualizar perfil.");

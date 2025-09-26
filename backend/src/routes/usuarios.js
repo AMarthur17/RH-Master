@@ -156,7 +156,7 @@ router.get("/", autenticar, permitir(["admin", "administrador"]), async (req, re
 });
 
 // Atualizar usuário e registrar histórico
-router.put("/:id", async (req, res) => {
+router.put("/:id", autenticar, async (req, res) => {
   try {
     const usuarioId = req.params.id;
     const { nome, cpf, empresa, idade, email, senha, cargo, alterado_por } =
