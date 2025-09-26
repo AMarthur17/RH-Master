@@ -1,5 +1,6 @@
 import express from "express";
 import { pool } from "../db.js";
+import { autenticar } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.post("/", async (req, res) => {
 });
 
 // Listar pontos de um usuário (com opção de filtrar somente hoje)
-router.get("/:usuario_id", async (req, res) => {
+router.get("/:usuario_id", autenticar, async (req, res) => {
   try {
     const { usuario_id } = req.params;
     const { hoje } = req.query;

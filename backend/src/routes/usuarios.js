@@ -1,8 +1,49 @@
 import express from "express";
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
+import * as fs from "fs";
+import path from "path";
+import { autenticar } from "../middleware/auth.js";
+import { permitir } from "../middleware/rbac.js";
 
 const router = express.Router();
+
+// Função para gerar nome da pasta do usuário (mesma do documentos.js)
+const generateUserFolderName = (userId, userName) => {
+  const normalizedName = userName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^a-zA-Z0-9]/g, "_") // Substitui caracteres especiais por underscore
+    .toLowerCase();
+  
+  return `${userId}-${normalizedName}`;
+};
+
+// Função para criar pasta do usuário
+const createUserFolder = (userId, userName) => {
+  try {
+    const uploadsDir = "uploads/";
+    const userFolderName = generateUserFolderName(userId, userName);
+    const userFolderPath = path.join(uploadsDir, userFolderName);
+    
+    // Garantir que a pasta uploads existe
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    // Criar pasta do usuário
+    if (!fs.existsSync(userFolderPath)) {
+      fs.mkdirSync(userFolderPath, { recursive: true });
+      console.log(`[CADASTRO] Pasta criada para usuário: ${userFolderPath}`);
+    }
+    
+    return userFolderPath;
+  } catch (error) {
+    console.error("[CADASTRO] Erro ao criar pasta do usuário:", error);
+    // Não falha o cadastro por causa da pasta
+    return null;
+  }
+};
 
 // Cadastro de usuário
 router.post("/", async (req, res) => {
@@ -26,7 +67,11 @@ router.post("/", async (req, res) => {
 
     const result = await pool.query(query, values);
 
-    res.status(201).json({ usuario: result.rows[0] });
+    // Criar pasta do usuário para futuros uploads
+    const usuario = result.rows[0];
+    createUserFolder(usuario.id, usuario.nome);
+
+    res.status(201).json({ usuario: usuario });
   } catch (error) {
     console.error("Erro no cadastro de usuário:", error);
     if (error.code === "23505") {
@@ -65,7 +110,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.default.sign(
       { id: usuario.id, perfil: usuario.cargo },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "8h" } // Aumentado para 8 horas
     );
 
     res.json({
@@ -85,7 +130,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Buscar usuários por nome (para administrador)
-router.get("/", async (req, res) => {
+router.get("/", autenticar, permitir(["admin", "administrador"]), async (req, res) => {
   try {
     const { nome, empresa } = req.query;
 

@@ -3,48 +3,63 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/global.css";
 
 export default function TelaAdministrador() {
-  // Função para remover documento
-  const handleRemoverDocumento = async (usuarioId, docId) => {
-    if (!window.confirm("Tem certeza que deseja remover este documento?"))
-      return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
-        method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error("Erro ao remover documento");
-      // Atualiza lista após remoção
-      buscarDocumentos(usuarioId);
-    } catch (err) {
-      alert("Erro ao remover documento.");
-    }
-  };
-
   const navigate = useNavigate();
   const location = useLocation();
   const admin = location.state?.usuario;
 
   const [nomeBusca, setNomeBusca] = useState("");
   const [usuarios, setUsuarios] = useState([]);
-  const [documentosUsuario, setDocumentosUsuario] = useState({});
-  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+
+  // Verificar se admin existe, se não, redirecionar para login
+  if (!admin) {
+    return (
+      <div className="cadastro-container">
+        <div className="cadastro-card">
+          <h2>Sessão Expirada</h2>
+          <p>Por favor, faça login novamente.</p>
+          <button 
+            className="btn-gradient" 
+            onClick={() => navigate("/login")}
+          >
+            Ir para Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const buscarUsuarios = async () => {
     try {
+      if (!admin) {
+        alert("Sessão expirada. Faça login novamente.");
+        navigate("/login");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:3000/usuario?nome=${nomeBusca}&empresa=${admin.empresa}`
+        `http://localhost:3000/usuario?nome=${nomeBusca}&empresa=${admin.empresa}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
-      if (!res.ok) throw new Error("Erro ao buscar usuários");
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert("Sessão expirada. Faça login novamente.");
+          navigate("/login");
+          return;
+        }
+        throw new Error("Erro ao buscar usuários");
+      }
       const data = await res.json();
 
       const usuariosComPontos = await Promise.all(
         data.map(async (user) => {
           const pontosRes = await fetch(
-            `http://localhost:3000/registro-ponto/${user.id}?hoje=true`
+            `http://localhost:3000/registro-ponto/${user.id}?hoje=true`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
           );
           const pontos = await pontosRes.json();
           return { ...user, pontos };
@@ -58,28 +73,7 @@ export default function TelaAdministrador() {
     }
   };
 
-  const buscarDocumentos = async (usuario_id) => {
-    try {
-      if (usuarioSelecionado === usuario_id) {
-        setUsuarioSelecionado(null);
-        return;
-      }
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:3000/documentos/${usuario_id}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-      if (!res.ok) throw new Error("Erro ao buscar documentos");
-      const docs = await res.json();
-      setDocumentosUsuario((prev) => ({ ...prev, [usuario_id]: docs }));
-      setUsuarioSelecionado(usuario_id);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao buscar documentos do usuário.");
-    }
-  };
+
 
   return (
     <div className="cadastro-container">
@@ -130,13 +124,7 @@ export default function TelaAdministrador() {
             </thead>
             <tbody>
               {usuarios.map((u) => (
-                <React.Fragment key={u.id}>
-                  <tr
-                    style={{
-                      background:
-                        usuarioSelecionado === u.id ? "#2226" : "#222a",
-                    }}
-                  >
+                <tr key={u.id} style={{ background: "#222a" }}>
                     <td>{u.nome}</td>
                     <td>{u.email}</td>
                     <td>{u.empresa}</td>
@@ -156,7 +144,7 @@ export default function TelaAdministrador() {
                       <button
                         className="btn-gradient"
                         style={{ fontSize: 12, padding: "4px 10px" }}
-                        onClick={() => buscarDocumentos(u.id)}
+                        onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
                       >
                         Gerenciar Documentos
                       </button>
@@ -189,8 +177,6 @@ export default function TelaAdministrador() {
                       </button>
                     </td>
                   </tr>
-                  {/* aqui mantém a parte de documentos que você já tinha */}
-                </React.Fragment>
               ))}
             </tbody>
           </table>
