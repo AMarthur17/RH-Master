@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 
 export default function TelaAdministrador() {
   const navigate = useNavigate();
@@ -17,10 +18,7 @@ export default function TelaAdministrador() {
         <div className="cadastro-card">
           <h2>Sessão Expirada</h2>
           <p>Por favor, faça login novamente.</p>
-          <button 
-            className="btn-gradient" 
-            onClick={() => navigate("/login")}
-          >
+          <button className="btn-gradient" onClick={() => navigate("/login")}>
             Ir para Login
           </button>
         </div>
@@ -73,8 +71,6 @@ export default function TelaAdministrador() {
     }
   };
 
-
-
   return (
     <div className="cadastro-container">
       <div className="cadastro-card">
@@ -125,58 +121,62 @@ export default function TelaAdministrador() {
             <tbody>
               {usuarios.map((u) => (
                 <tr key={u.id} style={{ background: "#222a" }}>
-                    <td>{u.nome}</td>
-                    <td>{u.email}</td>
-                    <td>{u.empresa}</td>
-                    <td>
-                      {u.pontos.length > 0
-                        ? u.pontos
-                            .map(
-                              (p) =>
-                                `${p.tipo} às ${new Date(
-                                  p.data_hora
-                                ).toLocaleTimeString()}`
-                            )
-                            .join(", ")
-                        : "Nenhum ponto"}
-                    </td>
-                    <td>
-                      <button
-                        className="btn-gradient"
-                        style={{ fontSize: 12, padding: "4px 10px" }}
-                        onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
-                      >
-                        Gerenciar Documentos
-                      </button>
-                    </td>
-                    <td>
-                      {/* 🔥 Novos botões */}
-                      <button
-                        className="btn-gradient"
-                        style={{
-                          fontSize: 12,
-                          padding: "4px 10px",
-                          marginRight: 6,
-                        }}
-                        onClick={() =>
-                          navigate("/editar-perfil", { state: { usuario: u } })
-                        }
-                      >
-                        Editar Perfil
-                      </button>
-                      <button
-                        className="btn-gradient"
-                        style={{ fontSize: 12, padding: "4px 10px" }}
-                        onClick={() =>
-                          navigate("/historico-perfil", {
-                            state: { usuario: u },
-                          })
-                        }
-                      >
-                        Histórico
-                      </button>
-                    </td>
-                  </tr>
+                  <td>{u.nome}</td>
+                  <td>{u.email}</td>
+                  <td>{u.empresa}</td>
+                  <td>
+                    {u.pontos.length > 0
+                      ? u.pontos
+                          .map(
+                            (p) =>
+                              `${p.tipo} às ${new Date(
+                                p.data_hora
+                              ).toLocaleTimeString()}`
+                          )
+                          .join(", ")
+                      : "Nenhum ponto"}
+                  </td>
+                  <td>
+                    <button
+                      className="btn-gradient"
+                      style={{ fontSize: 12, padding: "4px 10px" }}
+                      onClick={() =>
+                        navigate("/gerenciar-documentos", {
+                          state: { usuario: u },
+                        })
+                      }
+                    >
+                      Gerenciar Documentos
+                    </button>
+                  </td>
+                  <td>
+                    {/* 🔥 Novos botões */}
+                    <button
+                      className="btn-gradient"
+                      style={{
+                        fontSize: 12,
+                        padding: "4px 10px",
+                        marginRight: 6,
+                      }}
+                      onClick={() =>
+                        navigate("/editar-perfil", { state: { usuario: u } })
+                      }
+                    >
+                      Editar Perfil
+                    </button>
+                    <button
+                      className="btn-gradient"
+                      style={{ fontSize: 12, padding: "4px 10px" }}
+                      onClick={() =>
+                        navigate("/historico-perfil", {
+                          state: { usuario: u },
+                        })
+                      }
+                    >
+                      Histórico
+                    </button>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>

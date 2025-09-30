@@ -1,3 +1,4 @@
+// Define a URL da API via variável de ambiente ou fallback para localhost
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 // ===== Usuário =====
@@ -46,17 +47,7 @@ export const buscarHistorico = async (usuario_id) => {
   return res.json();
 };
 
-export const buscarColaboradores = async (empresa) => {
-  const res = await fetch(`${API_URL}/registro-ponto/admin/${empresa}`, {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error("Erro ao buscar colaboradores");
-  return res.json();
-};
-
 // ===== Gestão de Usuários (Admin) =====
-
-// Buscar todos usuários de uma empresa (com filtro opcional por nome)
 export const getUsuarios = async ({ nome = "", empresa = "" } = {}) => {
   const q = new URLSearchParams();
   if (nome) q.append("nome", nome);
@@ -69,7 +60,6 @@ export const getUsuarios = async ({ nome = "", empresa = "" } = {}) => {
   return res.json();
 };
 
-// Atualizar dados de um usuário
 export const updateUsuario = async (id, data) => {
   const res = await fetch(`${API_URL}/usuario/${id}`, {
     method: "PUT",
@@ -80,7 +70,7 @@ export const updateUsuario = async (id, data) => {
   return res.json();
 };
 
-// Buscar histórico de alterações de um usuário
+// ===== Histórico de alterações do usuário =====
 export const getHistorico = async (usuarioId) => {
   const res = await fetch(`${API_URL}/usuario/${usuarioId}/historico`, {
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },

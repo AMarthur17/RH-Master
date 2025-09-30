@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 import { getUsuarios } from "../services/api.js";
 
 export default function ConsultaUsuarios() {

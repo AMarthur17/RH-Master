@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function TelaColaborador() {
@@ -86,7 +87,7 @@ export default function TelaColaborador() {
     try {
       const token = localStorage.getItem("token");
       const updateData = { nome, email };
-      
+
       // Só adiciona senha se foi preenchida
       if (senha.trim()) {
         updateData.senha = senha;

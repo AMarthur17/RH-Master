@@ -1,0 +1,5 @@
+services:
+  backend:
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true

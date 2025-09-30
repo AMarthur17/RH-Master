@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 
 export default function GerenciarDocumentos() {
   const navigate = useNavigate();
@@ -45,16 +46,19 @@ export default function GerenciarDocumentos() {
   // Função para buscar documentos do usuário
   const buscarDocumentos = async () => {
     if (!usuario) return;
-    
+
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/documentos/${usuario.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
+      const res = await fetch(
+        `http://localhost:3000/documentos/${usuario.id}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
       if (!res.ok) throw new Error("Erro ao buscar documentos");
-      
+
       const docs = await res.json();
       setDocumentos(docs);
     } catch (err) {
@@ -68,7 +72,7 @@ export default function GerenciarDocumentos() {
   // Função para upload de documento
   const handleUpload = async (e) => {
     e.preventDefault();
-    
+
     if (!uploadFile) {
       alert("Selecione um arquivo.");
       return;
@@ -76,7 +80,7 @@ export default function GerenciarDocumentos() {
 
     // Validar tipos permitidos
     const allowed = ["pdf", "jpg", "jpeg", "png", "docx"];
-    const ext = uploadFile.name.split('.').pop().toLowerCase();
+    const ext = uploadFile.name.split(".").pop().toLowerCase();
     if (!allowed.includes(ext)) {
       alert("Apenas arquivos PDF, JPG, PNG ou DOCX são permitidos.");
       return;
@@ -86,22 +90,29 @@ export default function GerenciarDocumentos() {
 
     try {
       // Normalizar nome do arquivo
-      const normalizedFile = new File([uploadFile], normalizeFileName(uploadFile.name), { 
-        type: uploadFile.type 
-      });
-      
+      const normalizedFile = new File(
+        [uploadFile],
+        normalizeFileName(uploadFile.name),
+        {
+          type: uploadFile.type,
+        }
+      );
+
       const formData = new FormData();
       formData.append("arquivo", normalizedFile);
 
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/documentos/${usuario.id}`, {
-        method: "POST",
-        body: formData,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await fetch(
+        `http://localhost:3000/documentos/${usuario.id}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
 
       if (!res.ok) throw new Error("Erro ao fazer upload");
-      
+
       alert("Documento enviado com sucesso!");
       setUploadFile(null);
       setShowUpload(false);
@@ -116,17 +127,18 @@ export default function GerenciarDocumentos() {
 
   // Função para remover documento
   const handleRemoverDocumento = async (docId) => {
-    if (!window.confirm("Tem certeza que deseja remover este documento?")) return;
-    
+    if (!window.confirm("Tem certeza que deseja remover este documento?"))
+      return;
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      
+
       if (!res.ok) throw new Error("Erro ao remover documento");
-      
+
       alert("Documento removido com sucesso!");
       buscarDocumentos(); // Atualizar lista
     } catch (err) {
@@ -137,7 +149,7 @@ export default function GerenciarDocumentos() {
 
   // Função para obter o tipo do arquivo baseado na extensão
   const getFileTypeLabel = (fileName) => {
-    const ext = fileName.split('.').pop().toLowerCase();
+    const ext = fileName.split(".").pop().toLowerCase();
     if (ext === "pdf") return "PDF";
     if (ext === "jpg" || ext === "jpeg") return "JPG";
     if (ext === "png") return "PNG";
@@ -158,8 +170,8 @@ export default function GerenciarDocumentos() {
       <div className="cadastro-container">
         <div className="cadastro-card">
           <h2>Erro: Usuário não encontrado</h2>
-          <button 
-            className="btn-gradient" 
+          <button
+            className="btn-gradient"
             onClick={() => navigate("/administrador")}
           >
             Voltar para Administração
@@ -173,29 +185,43 @@ export default function GerenciarDocumentos() {
     <div className="cadastro-container">
       <div className="cadastro-card">
         {/* Header com informações do usuário */}
-        <div style={{ 
-          marginBottom: 32, 
-          padding: 20, 
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", 
-          borderRadius: 12,
-          color: "#fff"
-        }}>
-          <h2 style={{ margin: "0 0 20px 0", fontSize: 28 }}>Gerenciar Documentos</h2>
+        <div
+          style={{
+            marginBottom: 32,
+            padding: 20,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            borderRadius: 12,
+            color: "#fff",
+          }}
+        >
+          <h2 style={{ margin: "0 0 20px 0", fontSize: 28 }}>
+            Gerenciar Documentos
+          </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <strong style={{ minWidth: 100, textAlign: "left" }}>Nome:</strong>
-              <span style={{ fontSize: 18, marginLeft: 20 }}>{usuario.nome}</span>
+              <strong style={{ minWidth: 100, textAlign: "left" }}>
+                Nome:
+              </strong>
+              <span style={{ fontSize: 18, marginLeft: 20 }}>
+                {usuario.nome}
+              </span>
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <strong style={{ minWidth: 100, textAlign: "left" }}>Empresa:</strong>
+              <strong style={{ minWidth: 100, textAlign: "left" }}>
+                Empresa:
+              </strong>
               <span style={{ marginLeft: 20 }}>{usuario.empresa}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <strong style={{ minWidth: 100, textAlign: "left" }}>Cargo:</strong>
+              <strong style={{ minWidth: 100, textAlign: "left" }}>
+                Cargo:
+              </strong>
               <span style={{ marginLeft: 20 }}>{usuario.cargo}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <strong style={{ minWidth: 100, textAlign: "left" }}>Email:</strong>
+              <strong style={{ minWidth: 100, textAlign: "left" }}>
+                Email:
+              </strong>
               <span style={{ marginLeft: 20 }}>{usuario.email}</span>
             </div>
           </div>
@@ -203,19 +229,23 @@ export default function GerenciarDocumentos() {
 
         {/* Seção de Upload */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center", 
-            marginBottom: 16,
-            width: "100%"
-          }}>
-            <h3 style={{ 
-              margin: 0, 
-              color: "#fff", 
-              textAlign: "left",
-              flex: "0 0 auto"
-            }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+              width: "100%",
+            }}
+          >
+            <h3
+              style={{
+                margin: 0,
+                color: "#fff",
+                textAlign: "left",
+                flex: "0 0 auto",
+              }}
+            >
               Adicionar Documento
             </h3>
             <button
@@ -240,39 +270,58 @@ export default function GerenciarDocumentos() {
                 background: "#222a",
                 borderRadius: 12,
                 padding: 20,
-                boxShadow: "0 2px 8px #0002"
+                boxShadow: "0 2px 8px #0002",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,.docx"
                   onChange={(e) => setUploadFile(e.target.files[0])}
-                  style={{ 
-                    color: "#fff", 
+                  style={{
+                    color: "#fff",
                     flex: 1,
-                    minWidth: 250
+                    minWidth: 250,
                   }}
                 />
-                
+
                 {uploadFile && (
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: 8,
-                    color: "#fff"
-                  }}>
-                    <span style={{
-                      background: "#00c6ff",
-                      color: "#222",
-                      borderRadius: 6,
-                      padding: "4px 12px",
-                      fontWeight: 600,
-                      fontSize: 12
-                    }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "#fff",
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: "#00c6ff",
+                        color: "#222",
+                        borderRadius: 6,
+                        padding: "4px 12px",
+                        fontWeight: 600,
+                        fontSize: 12,
+                      }}
+                    >
                       {getFileTypeLabel(uploadFile.name)}
                     </span>
-                    <span style={{ fontSize: 14, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        maxWidth: 200,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {uploadFile.name}
                     </span>
                   </div>
@@ -282,9 +331,9 @@ export default function GerenciarDocumentos() {
                   className="btn-gradient"
                   type="submit"
                   disabled={uploading || !uploadFile}
-                  style={{ 
+                  style={{
                     minWidth: 140,
-                    opacity: (!uploadFile || uploading) ? 0.6 : 1
+                    opacity: !uploadFile || uploading ? 0.6 : 1,
                   }}
                 >
                   {uploading ? "Enviando..." : "Enviar Documento"}
@@ -301,11 +350,13 @@ export default function GerenciarDocumentos() {
           </h3>
 
           {loading ? (
-            <div style={{ 
-              textAlign: "center", 
-              padding: 40, 
-              color: "#ccc" 
-            }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: 40,
+                color: "#ccc",
+              }}
+            >
               Carregando documentos...
             </div>
           ) : documentos.length > 0 ? (
@@ -320,38 +371,50 @@ export default function GerenciarDocumentos() {
                     background: "#222a",
                     borderRadius: 8,
                     padding: 16,
-                    boxShadow: "0 1px 4px #0002"
+                    boxShadow: "0 1px 4px #0002",
                   }}
                 >
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{
-                      background: "#00c6ff",
-                      color: "#222",
-                      borderRadius: 6,
-                      padding: "4px 10px",
-                      fontWeight: 600,
-                      fontSize: 11,
-                      minWidth: 50,
-                      textAlign: "center"
-                    }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: "#00c6ff",
+                        color: "#222",
+                        borderRadius: 6,
+                        padding: "4px 10px",
+                        fontWeight: 600,
+                        fontSize: 11,
+                        minWidth: 50,
+                        textAlign: "center",
+                      }}
+                    >
                       {getFileTypeLabel(doc.nome_arquivo)}
                     </span>
-                    <span style={{ 
-                      color: "#fff", 
-                      fontSize: 16,
-                      wordBreak: "break-all"
-                    }}>
+                    <span
+                      style={{
+                        color: "#fff",
+                        fontSize: 16,
+                        wordBreak: "break-all",
+                      }}
+                    >
                       {doc.nome_arquivo}
                     </span>
                   </div>
-                  
+
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
                       className="btn-gradient"
-                      style={{ 
-                        fontSize: 14, 
+                      style={{
+                        fontSize: 14,
                         padding: "8px 16px",
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                        background:
+                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                       }}
                       onClick={() => window.open(doc.url_arquivo, "_blank")}
                     >
@@ -359,10 +422,11 @@ export default function GerenciarDocumentos() {
                     </button>
                     <button
                       className="btn-gradient"
-                      style={{ 
-                        fontSize: 14, 
+                      style={{
+                        fontSize: 14,
                         padding: "8px 16px",
-                        background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)"
+                        background:
+                          "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)",
                       }}
                       onClick={() => handleRemoverDocumento(doc.id)}
                     >
@@ -373,14 +437,16 @@ export default function GerenciarDocumentos() {
               ))}
             </div>
           ) : (
-            <div style={{ 
-              textAlign: "center", 
-              padding: 40, 
-              color: "#ccc",
-              background: "#222a",
-              borderRadius: 8,
-              fontStyle: "italic"
-            }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: 40,
+                color: "#ccc",
+                background: "#222a",
+                borderRadius: 8,
+                fontStyle: "italic",
+              }}
+            >
               Nenhum documento encontrado para este usuário.
             </div>
           )}

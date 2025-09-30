@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 import logo from "../assets/logo_rh_master.png";
 import { useNavigate } from "react-router-dom";
 

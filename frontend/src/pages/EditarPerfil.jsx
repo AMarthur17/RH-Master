@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 
 export default function EditarPerfil() {
   const location = useLocation();

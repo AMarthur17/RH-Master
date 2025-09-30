@@ -1,6 +1,7 @@
 // src/pages/RegistroPonto.jsx
 import React, { useState } from "react";
-import "../styles/global.css";
+import "../styles/index.css";
+import "../styles/app.css";
 import logo from "../assets/logo_rh_master.png";
 
 export default function RegistroPonto() {
@@ -33,7 +34,11 @@ export default function RegistroPonto() {
           <button className="btn-gradient" onClick={registrarEntrada}>
             Registrar Entrada
           </button>
-          <button className="btn-gradient" onClick={registrarSaida} style={{ marginLeft: "10px" }}>
+          <button
+            className="btn-gradient"
+            onClick={registrarSaida}
+            style={{ marginLeft: "10px" }}
+          >
             Registrar Saída
           </button>
         </div>

@@ -1,12 +1,18 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Páginas
 import Home from "./pages/Home";
 import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
 import TelaColaborador from "./pages/TelaColaborador";
 import TelaAdministrador from "./pages/TelaAdministrador";
 import EditarPerfil from "./pages/EditarPerfil";
-import GerenciarDocumentos from "./pages/GerenciarDocumentos"; 
+import GerenciarDocumentos from "./pages/GerenciarDocumentos";
+
+// CSS global e específico
+import "./styles/index.css";
+import "./styles/app.css";
 
 export default function App() {
   return (
