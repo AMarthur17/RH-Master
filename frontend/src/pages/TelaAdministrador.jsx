@@ -3,24 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/global.css";
 
 export default function TelaAdministrador() {
-  // Função para remover documento
-  const handleRemoverDocumento = async (usuarioId, docId) => {
-    if (!window.confirm("Tem certeza que deseja remover este documento?"))
-      return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
-        method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error("Erro ao remover documento");
-      // Atualiza lista após remoção
-      buscarDocumentos(usuarioId);
-    } catch (err) {
-      alert("Erro ao remover documento.");
-    }
-  };
-
   const navigate = useNavigate();
   const location = useLocation();
   const admin = location.state?.usuario;
@@ -33,6 +15,12 @@ export default function TelaAdministrador() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
+  // Estados da folha de pagamento
+  const [folha, setFolha] = useState([]);
+  const [loadingFolha, setLoadingFolha] = useState(false);
+  const [mostrarFolha, setMostrarFolha] = useState(false);
+
+  // Função para buscar usuários
   const buscarUsuarios = async () => {
     try {
       const res = await fetch(
@@ -58,6 +46,7 @@ export default function TelaAdministrador() {
     }
   };
 
+  // Função para buscar documentos de um usuário
   const buscarDocumentos = async (usuario_id) => {
     try {
       if (usuarioSelecionado === usuario_id) {
@@ -81,10 +70,53 @@ export default function TelaAdministrador() {
     }
   };
 
+  // Função para remover documento
+  const handleRemoverDocumento = async (usuarioId, docId) => {
+    if (!window.confirm("Tem certeza que deseja remover este documento?"))
+      return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Erro ao remover documento");
+      buscarDocumentos(usuarioId);
+    } catch (err) {
+      alert("Erro ao remover documento.");
+    }
+  };
+
+  // Função para gerar folha de pagamento
+  const gerarFolha = async () => {
+    if (!window.confirm("Gerar folha de pagamento deste mês?")) return;
+    try {
+      setLoadingFolha(true);
+      const res = await fetch(`http://localhost:3000/folha/${admin.empresa}`);
+      if (!res.ok) throw new Error("Erro ao gerar folha");
+      const data = await res.json();
+      setFolha(data);
+      setMostrarFolha(true);
+    } catch (err) {
+      alert("Falha ao gerar folha.");
+    } finally {
+      setLoadingFolha(false);
+    }
+  };
+
   return (
     <div className="cadastro-container">
       <div className="cadastro-card">
         <h2>Bem-vindo, Administrador!</h2>
+
+        {/* Botão gerar folha */}
+        <button
+          className="btn-gradient"
+          onClick={gerarFolha}
+          style={{ marginBottom: 20 }}
+        >
+          {loadingFolha ? "Calculando..." : "Gerar Folha de Pagamento"}
+        </button>
 
         {/* Busca de usuários */}
         <div
@@ -107,6 +139,7 @@ export default function TelaAdministrador() {
           </button>
         </div>
 
+        {/* Tabela de usuários */}
         {usuarios.length > 0 && (
           <table
             style={{
@@ -125,7 +158,7 @@ export default function TelaAdministrador() {
                 <th>Empresa</th>
                 <th>Pontos Hoje</th>
                 <th>Documentos</th>
-                <th>Ações</th> {/* 🔥 Nova coluna */}
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -162,7 +195,6 @@ export default function TelaAdministrador() {
                       </button>
                     </td>
                     <td>
-                      {/* 🔥 Novos botões */}
                       <button
                         className="btn-gradient"
                         style={{
@@ -180,20 +212,82 @@ export default function TelaAdministrador() {
                         className="btn-gradient"
                         style={{ fontSize: 12, padding: "4px 10px" }}
                         onClick={() =>
-                          navigate("/historico-perfil", {
-                            state: { usuario: u },
-                          })
+                          navigate("/historico-perfil", { state: { usuario: u } })
                         }
                       >
                         Histórico
                       </button>
                     </td>
                   </tr>
-                  {/* aqui mantém a parte de documentos que você já tinha */}
                 </React.Fragment>
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* Tabela da Folha de Pagamento */}
+        {mostrarFolha && (
+          <div style={{ marginTop: 20 }}>
+            <h3>Folha de Pagamento</h3>
+            <table style={{ width: "100%", color: "#fff" }}>
+              <thead>
+                <tr>
+                  <th>Colaborador</th>
+                  <th>Salário Bruto</th>
+                  <th>INSS</th>
+                  <th>Vale Transporte</th>
+                  <th>Salário Líquido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {folha.map((f) => (
+                  <tr key={f.usuarioId}>
+                    <td>{f.nome}</td>
+                    <td>R$ {f.salarioBruto.toFixed(2)}</td>
+                    <td>R$ {f.descontos.inss.toFixed(2)}</td>
+                    <td>R$ {f.descontos.valeTransporte.toFixed(2)}</td>
+                    <td>R$ {f.salarioLiquido.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+              <button
+                className="btn-gradient"
+                onClick={async () => {
+                  if (!window.confirm("Confirmar pagamento e salvar histórico?"))
+                    return;
+                  try {
+                    const res = await fetch(
+                      "http://localhost:3000/folha/confirmar",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          empresaId: admin.empresa,
+                          folha,
+                        }),
+                      }
+                    );
+                    if (!res.ok) throw new Error("Erro ao confirmar folha");
+                    alert("Folha confirmada com sucesso!");
+                    setMostrarFolha(false);
+                  } catch (err) {
+                    alert("Falha ao confirmar folha.");
+                  }
+                }}
+              >
+                Confirmar Pagamento
+              </button>
+              <button
+                className="btn-gradient"
+                onClick={() => setMostrarFolha(false)}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         )}
 
         <button

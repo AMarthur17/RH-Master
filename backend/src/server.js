@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import documentosRouter from "./routes/documentos.js"; // 👈 CORRIGIDO
+import folhaRouter from "./routes/folha.js"; // 👈 IMPORTAÇÃO ADICIONADA
 
 dotenv.config();
 
@@ -12,13 +13,16 @@ app.use(cors());
 app.use(express.json());
 
 // Servir arquivos da pasta uploads
-app.use("/uploads", express.static("uploads")); // 👈 ADICIONADO
+app.use("/uploads", express.static("uploads")); // caso queira servir uploads
 
 // Rotas principais 
 app.use("/", routes);
 
 // Rota de documentos
-app.use("/documentos", documentosRouter); // 👈 ADICIONADO
+app.use("/documentos", documentosRouter); 
+
+// Rota da folha de pagamento
+app.use("/folha", folhaRouter); // ✅ agora vai funcionar
 
 // Rota teste
 app.get("/teste", (req, res) => {

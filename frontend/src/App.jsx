@@ -5,7 +5,8 @@ import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
 import TelaColaborador from "./pages/TelaColaborador";
 import TelaAdministrador from "./pages/TelaAdministrador";
-import EditarPerfil from "./pages/EditarPerfil"; 
+import EditarPerfil from "./pages/EditarPerfil";
+import HistoricoPerfil from "./pages/HistoricoPerfil"; // adicionada
 
 export default function App() {
   return (
@@ -16,7 +17,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/colaborador" element={<TelaColaborador />} />
         <Route path="/administrador" element={<TelaAdministrador />} />
-        <Route path="/editar-perfil" element={<EditarPerfil />} /> 
+        <Route path="/editar-perfil" element={<EditarPerfil />} />
+        <Route path="/historico-perfil" element={<HistoricoPerfil />} /> {/* adicionada */}
       </Routes>
     </Router>
   );
