@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.9'
 
 services:
   db:
@@ -35,7 +35,7 @@ services:
       - UPLOADS_DIR=uploads
     volumes:
       - ./backend:/app
-      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
 
   frontend:
     build: ./frontend
@@ -49,7 +49,7 @@ services:
       - VITE_API_URL=http://localhost:3000
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
 
 volumes:
   postgres_data:
