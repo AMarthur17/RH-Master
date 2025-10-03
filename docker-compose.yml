@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:15
@@ -23,18 +21,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - PORT=3000
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=rh_master
-      - DB_SSL=false
-      - JWT_SECRET=supersecretkey123
-      - JWT_EXPIRES_IN=1d
-      - UPLOADS_DIR=uploads
+      PORT: 3000
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: rh_master
+      DB_SSL: false
+      JWT_SECRET: supersecretkey123
+      JWT_EXPIRES_IN: 1d
+      UPLOADS_DIR: uploads
     volumes:
-      - ./backend:/app
+      - ./backend:/app:cached
+      # ⚠ Não mapear node_modules do host
     command: sh -c "npm install && npm run dev"
 
   frontend:
@@ -46,7 +45,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      VITE_API_URL: http://backend:3000   # usa o nome do serviço do docker
     volumes:
       - ./frontend:/app
     command: sh -c "npm install && npm run dev"
