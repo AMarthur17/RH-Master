@@ -11,7 +11,7 @@ export default function TelaAdministrador() {
   const [nomeBusca, setNomeBusca] = useState("");
   const [usuarios, setUsuarios] = useState([]);
 
-  // Verificar se admin existe, se não, redirecionar para login
+  // Redireciona para login se admin não existir
   if (!admin) {
     return (
       <div className="cadastro-container">
@@ -26,14 +26,9 @@ export default function TelaAdministrador() {
     );
   }
 
+  // Buscar usuários
   const buscarUsuarios = async () => {
     try {
-      if (!admin) {
-        alert("Sessão expirada. Faça login novamente.");
-        navigate("/login");
-        return;
-      }
-
       const token = localStorage.getItem("token");
       const res = await fetch(
         `http://localhost:3000/usuario?nome=${nomeBusca}&empresa=${admin.empresa}`,
@@ -41,23 +36,15 @@ export default function TelaAdministrador() {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
-      if (!res.ok) {
-        if (res.status === 401) {
-          alert("Sessão expirada. Faça login novamente.");
-          navigate("/login");
-          return;
-        }
-        throw new Error("Erro ao buscar usuários");
-      }
+      if (!res.ok) throw new Error("Erro ao buscar usuários");
+
       const data = await res.json();
 
       const usuariosComPontos = await Promise.all(
         data.map(async (user) => {
           const pontosRes = await fetch(
             `http://localhost:3000/registro-ponto/${user.id}?hoje=true`,
-            {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            }
+            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
           );
           const pontos = await pontosRes.json();
           return { ...user, pontos };
@@ -71,32 +58,80 @@ export default function TelaAdministrador() {
     }
   };
 
+  // Função para gerar folha de pagamento com todos os usuários da empresa, exceto o admin
+  const gerarFolha = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:3000/usuario?empresa=${admin.empresa}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      if (!res.ok) throw new Error("Erro ao buscar usuários para folha");
+
+      let usuariosTodos = await res.json();
+
+      // Filtrar o administrador da lista
+      usuariosTodos = usuariosTodos.filter(u => u.id !== admin.id);
+
+      const usuariosComPontos = await Promise.all(
+        usuariosTodos.map(async (user) => {
+          const pontosRes = await fetch(
+            `http://localhost:3000/registro-ponto/${user.id}?hoje=true`,
+            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+          );
+          const pontos = await pontosRes.json();
+          return { ...user, pontos };
+        })
+      );
+
+      navigate("/folha-pagamento", { state: { usuarios: usuariosComPontos } });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao gerar folha de pagamento.");
+    }
+  };
+
   return (
     <div className="cadastro-container">
       <div className="cadastro-card">
         <h2>Bem-vindo, Administrador!</h2>
 
-        {/* Busca de usuários */}
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Buscar colaborador pelo nome"
-            value={nomeBusca}
-            onChange={(e) => setNomeBusca(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <button className="btn-gradient" onClick={buscarUsuarios}>
-            Buscar
+        {/* Bloco de busca */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              placeholder="Buscar colaborador pelo nome"
+              value={nomeBusca}
+              onChange={(e) => setNomeBusca(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button className="btn-gradient" onClick={buscarUsuarios}>
+              Buscar
+            </button>
+          </div>
+
+          {/* Botão de gerar folha */}
+          <button
+            className="btn-gradient"
+            onClick={gerarFolha}
+            style={{
+              marginTop: 8,
+              backgroundColor: "#ff9800",
+              color: "#fff",
+              padding: "8px 16px",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
+          >
+            Gerar Folha de Pagamento
           </button>
         </div>
 
+        {/* Tabela de usuários */}
         {usuarios.length > 0 && (
           <table
             style={{
@@ -115,7 +150,7 @@ export default function TelaAdministrador() {
                 <th>Empresa</th>
                 <th>Pontos Hoje</th>
                 <th>Documentos</th>
-                <th>Ações</th> {/* 🔥 Nova coluna */}
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -127,12 +162,7 @@ export default function TelaAdministrador() {
                   <td>
                     {u.pontos.length > 0
                       ? u.pontos
-                          .map(
-                            (p) =>
-                              `${p.tipo} às ${new Date(
-                                p.data_hora
-                              ).toLocaleTimeString()}`
-                          )
+                          .map((p) => `${p.tipo} às ${new Date(p.data_hora).toLocaleTimeString()}`)
                           .join(", ")
                       : "Nenhum ponto"}
                   </td>
@@ -140,38 +170,23 @@ export default function TelaAdministrador() {
                     <button
                       className="btn-gradient"
                       style={{ fontSize: 12, padding: "4px 10px" }}
-                      onClick={() =>
-                        navigate("/gerenciar-documentos", {
-                          state: { usuario: u },
-                        })
-                      }
+                      onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
                     >
                       Gerenciar Documentos
                     </button>
                   </td>
                   <td>
-                    {/* 🔥 Novos botões */}
                     <button
                       className="btn-gradient"
-                      style={{
-                        fontSize: 12,
-                        padding: "4px 10px",
-                        marginRight: 6,
-                      }}
-                      onClick={() =>
-                        navigate("/editar-perfil", { state: { usuario: u } })
-                      }
+                      style={{ fontSize: 12, padding: "4px 10px", marginRight: 6 }}
+                      onClick={() => navigate("/editar-perfil", { state: { usuario: u } })}
                     >
                       Editar Perfil
                     </button>
                     <button
                       className="btn-gradient"
                       style={{ fontSize: 12, padding: "4px 10px" }}
-                      onClick={() =>
-                        navigate("/historico-perfil", {
-                          state: { usuario: u },
-                        })
-                      }
+                      onClick={() => navigate("/historico-perfil", { state: { usuario: u } })}
                     >
                       Histórico
                     </button>

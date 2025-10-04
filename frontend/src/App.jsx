@@ -9,6 +9,7 @@ import TelaColaborador from "./pages/TelaColaborador";
 import TelaAdministrador from "./pages/TelaAdministrador";
 import EditarPerfil from "./pages/EditarPerfil";
 import GerenciarDocumentos from "./pages/GerenciarDocumentos";
+import FolhaPagamento from "./pages/FolhaPagamento"; // 🔥 nova página
 
 // CSS global e específico
 import "./styles/index.css";
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/administrador" element={<TelaAdministrador />} />
         <Route path="/editar-perfil" element={<EditarPerfil />} />
         <Route path="/gerenciar-documentos" element={<GerenciarDocumentos />} />
+        <Route path="/folha-pagamento" element={<FolhaPagamento />} /> {/* 🔥 rota nova */}
       </Routes>
     </Router>
   );

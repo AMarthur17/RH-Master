@@ -1,0 +1,231 @@
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
+export default function FolhaPagamento() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const usuarios = location.state?.usuarios || [];
+
+  const [gerando, setGerando] = useState(false);
+  const [folhaGerada, setFolhaGerada] = useState(null);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [pagamentoEnviado, setPagamentoEnviado] = useState(false);
+
+  const token = localStorage.getItem("token");
+
+  const calcularFolha = (usuario) => {
+    const salarioBase = 2000;
+    const adicionais = Math.floor(usuario.pontos.length / 2) * 100;
+    const beneficios = 150 + 300;
+    const inss = salarioBase * 0.11;
+    const irrf = salarioBase * 0.075;
+    const faltas = usuario.faltas ? usuario.faltas * 50 : 0;
+    const descontos = inss + irrf + faltas;
+    const liquido = salarioBase + adicionais + beneficios - descontos;
+
+    return { salarioBase, adicionais, beneficios, descontos, liquido };
+  };
+
+  const gerarFolha = async () => {
+    if (usuarios.length === 0) return;
+    setGerando(true);
+    try {
+      const res = await fetch("http://localhost:3000/folha/gerar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ usuarios: usuarios.map(u => u.id) }),
+      });
+      if (!res.ok) throw new Error("Erro ao gerar folha de pagamento");
+      const data = await res.json();
+      setFolhaGerada(data);
+      alert("Folha de pagamento gerada com sucesso!");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao gerar folha de pagamento.");
+    } finally {
+      setGerando(false);
+    }
+  };
+
+  const validarSenha = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/usuario/validar-senha", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ senha }),
+      });
+      if (!res.ok) throw new Error("Erro ao validar senha");
+      const data = await res.json();
+      return data.valido;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  };
+
+  const enviarPagamentos = async () => {
+    if (pagamentoEnviado) {
+      alert("Pagamentos já foram enviados!");
+      return;
+    }
+    if (!senha) {
+      alert("Digite sua senha para confirmar o envio.");
+      return;
+    }
+    const senhaValida = await validarSenha();
+    if (!senhaValida) {
+      alert("Senha incorreta! Tente novamente.");
+      return;
+    }
+    alert("Pagamentos enviados com sucesso!");
+    setPagamentoEnviado(true);
+    setModalAberto(false);
+    setSenha("");
+  };
+
+  return (
+    <div className="cadastro-container" style={{ display: "flex", justifyContent: "center", padding: 20 }}>
+      <div
+        className="cadastro-card"
+        style={{
+          width: "95%",
+          maxWidth: 1200,
+          padding: 30,
+          borderRadius: 12,
+          background: "#222", // fundo do card voltou ao padrão antigo
+          color: "#fff",      // texto do card branco
+          boxShadow: "0 4px 12px #0004",
+        }}
+      >
+        <h2>Relatório de Folha de Pagamento</h2>
+
+        {usuarios.length === 0 ? (
+          <p>Nenhum usuário encontrado para gerar a folha.</p>
+        ) : (
+          <>
+            <div
+              style={{
+                marginTop: 20,
+                borderRadius: 8,
+                overflow: "hidden",
+                boxShadow: "0 2px 8px #0002",
+              }}
+            >
+              <table
+                style={{
+                  width: "100%",
+                  color: "#000", // texto da tabela preto
+                  borderCollapse: "collapse",
+                  tableLayout: "fixed",
+                  background: "#fff", // fundo da tabela branco
+                }}
+              >
+                <thead style={{ background: "#ddd" }}>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Pontos</th>
+                    <th>Salário Base</th>
+                    <th>Adicionais</th>
+                    <th>Benefícios</th>
+                    <th>Descontos</th>
+                    <th>Valor Líquido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuarios.map((u) => {
+                    const f = calcularFolha(u);
+                    return (
+                      <tr key={u.id} style={{ background: "#eee" }}>
+                        <td>{u.nome}</td>
+                        <td>{u.email}</td>
+                        <td>{u.pontos.length}</td>
+                        <td>R$ {f.salarioBase}</td>
+                        <td>R$ {f.adicionais}</td>
+                        <td>R$ {f.beneficios}</td>
+                        <td>R$ {f.descontos}</td>
+                        <td>R$ {f.liquido}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              style={{ marginTop: 20 }}
+              className="btn-gradient"
+              onClick={() => setModalAberto(true)}
+              disabled={pagamentoEnviado}
+            >
+              {pagamentoEnviado ? "Pagamentos Enviados" : "Enviar Pagamentos"}
+            </button>
+          </>
+        )}
+
+        <button
+          style={{ marginTop: 10 }}
+          className="btn-gradient"
+          onClick={() => navigate(-1)}
+        >
+          Voltar
+        </button>
+
+        {modalAberto && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                padding: 20,
+                borderRadius: 8,
+                width: 300,
+                textAlign: "center",
+              }}
+            >
+              <h3 style={{ color: "#222" }}>Confirmar Envio de Pagamentos</h3>
+              <p>Digite sua senha para confirmar:</p>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                style={{ width: "100%", padding: 8, marginBottom: 10 }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <button className="btn-gradient" onClick={enviarPagamentos}>
+                  Confirmar
+                </button>
+                <button
+                  className="btn-gradient"
+                  style={{ background: "#ccc", color: "#000" }}
+                  onClick={() => setModalAberto(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
