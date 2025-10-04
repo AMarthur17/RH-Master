@@ -185,10 +185,17 @@ export default function TelaAdministrador() {
                     </button>
                     <button
                       className="btn-gradient"
-                      style={{ fontSize: 12, padding: "4px 10px" }}
+                      style={{ fontSize: 12, padding: "4px 10px", marginRight: 6 }}
                       onClick={() => navigate("/historico-perfil", { state: { usuario: u } })}
                     >
                       Histórico
+                    </button>
+                    <button
+                      className="btn-gradient"
+                      style={{ fontSize: 12, padding: "4px 10px" }}
+                      onClick={() => navigate("/historico-pontos", { state: { usuario: u } })}
+                    >
+                      Histórico de Pontos
                     </button>
                   </td>
                 </tr>

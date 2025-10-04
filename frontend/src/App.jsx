@@ -10,6 +10,7 @@ import TelaAdministrador from "./pages/TelaAdministrador";
 import EditarPerfil from "./pages/EditarPerfil";
 import GerenciarDocumentos from "./pages/GerenciarDocumentos";
 import FolhaPagamento from "./pages/FolhaPagamento"; // 🔥 nova página
+import HistoricoPontos from "./pages/HistoricoPontos"; // nova página de histórico de pontos
 
 // CSS global e específico
 import "./styles/index.css";
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/editar-perfil" element={<EditarPerfil />} />
         <Route path="/gerenciar-documentos" element={<GerenciarDocumentos />} />
         <Route path="/folha-pagamento" element={<FolhaPagamento />} /> {/* 🔥 rota nova */}
+        <Route path="/historico-pontos" element={<HistoricoPontos />} />
       </Routes>
     </Router>
   );

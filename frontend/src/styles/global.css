@@ -12,7 +12,9 @@ body,
 #root {
   height: 100%;
   width: 100%;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  /* Subtle diagonal teal gradient (matches provided sample) */
+  background: linear-gradient(135deg, #0c2b30 0%, #123b41 50%, #163f44 100%);
+  background-attachment: fixed;
   color: #fff;
   display: flex;
   justify-content: center;
