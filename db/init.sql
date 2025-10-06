@@ -49,7 +49,8 @@ CREATE TABLE registro_ponto (
   id SERIAL PRIMARY KEY,
   usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
   tipo VARCHAR(50) NOT NULL,
-  data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  motivo TEXT
 );
 
 -- Tabela de folha de pagamento (simplificada)
