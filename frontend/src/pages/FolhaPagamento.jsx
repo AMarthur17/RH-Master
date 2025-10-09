@@ -13,11 +13,34 @@ export default function FolhaPagamento() {
   const [pagamentoEnviado, setPagamentoEnviado] = useState(false);
 
   const token = localStorage.getItem("token");
+  const API_URL = "http://localhost:3000";
 
-  const calcularFolha = (usuario) => {
+  // 🔹 Busca benefícios reais de um colaborador
+  const getBeneficiosUsuario = async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/beneficios/${usuarioId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+      if (!res.ok) throw new Error("Erro ao buscar benefícios");
+      const data = await res.json();
+      return data; // lista de benefícios do usuário
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  // 🔹 Calcula folha com base nos benefícios reais
+  const calcularFolha = (usuario, beneficiosUsuario) => {
     const salarioBase = 2000;
     const adicionais = Math.floor(usuario.pontos.length / 2) * 100;
-    const beneficios = 150 + 300;
+    const beneficios = beneficiosUsuario.reduce(
+      (total, b) => total + (b.valor || 0),
+      0
+    );
     const inss = salarioBase * 0.11;
     const irrf = salarioBase * 0.075;
     const faltas = usuario.faltas ? usuario.faltas * 50 : 0;
@@ -27,21 +50,24 @@ export default function FolhaPagamento() {
     return { salarioBase, adicionais, beneficios, descontos, liquido };
   };
 
+  // 🔹 Gera folha puxando benefícios de cada usuário
   const gerarFolha = async () => {
     if (usuarios.length === 0) return;
     setGerando(true);
     try {
-      const res = await fetch("http://localhost:3000/folha/gerar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ usuarios: usuarios.map(u => u.id) }),
+      const usuariosComBeneficios = await Promise.all(
+        usuarios.map(async (u) => {
+          const beneficios = await getBeneficiosUsuario(u.id);
+          return { ...u, beneficios };
+        })
+      );
+
+      const folha = usuariosComBeneficios.map((u) => {
+        const f = calcularFolha(u, u.beneficios);
+        return { usuario: u, ...f };
       });
-      if (!res.ok) throw new Error("Erro ao gerar folha de pagamento");
-      const data = await res.json();
-      setFolhaGerada(data);
+
+      setFolhaGerada(folha);
       alert("Folha de pagamento gerada com sucesso!");
     } catch (err) {
       console.error(err);
@@ -91,7 +117,10 @@ export default function FolhaPagamento() {
   };
 
   return (
-    <div className="cadastro-container" style={{ display: "flex", justifyContent: "center", padding: 20 }}>
+    <div
+      className="cadastro-container"
+      style={{ display: "flex", justifyContent: "center", padding: 20 }}
+    >
       <div
         className="cadastro-card"
         style={{
@@ -99,8 +128,8 @@ export default function FolhaPagamento() {
           maxWidth: 1200,
           padding: 30,
           borderRadius: 12,
-          background: "#222", // fundo do card voltou ao padrão antigo
-          color: "#fff",      // texto do card branco
+          background: "#222",
+          color: "#fff",
           boxShadow: "0 4px 12px #0004",
         }}
       >
@@ -110,60 +139,68 @@ export default function FolhaPagamento() {
           <p>Nenhum usuário encontrado para gerar a folha.</p>
         ) : (
           <>
-            <div
-              style={{
-                marginTop: 20,
-                borderRadius: 8,
-                overflow: "hidden",
-                boxShadow: "0 2px 8px #0002",
-              }}
+            <button
+              style={{ marginBottom: 15 }}
+              className="btn-gradient"
+              onClick={gerarFolha}
+              disabled={gerando}
             >
-              <table
+              {gerando ? "Gerando..." : "Gerar Folha de Pagamento"}
+            </button>
+
+            {folhaGerada && (
+              <div
                 style={{
-                  width: "100%",
-                  color: "#000", // texto da tabela preto
-                  borderCollapse: "collapse",
-                  tableLayout: "fixed",
-                  background: "#fff", // fundo da tabela branco
+                  marginTop: 20,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  boxShadow: "0 2px 8px #0002",
                 }}
               >
-                <thead style={{ background: "#ddd" }}>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Pontos</th>
-                    <th>Salário Base</th>
-                    <th>Adicionais</th>
-                    <th>Benefícios</th>
-                    <th>Descontos</th>
-                    <th>Valor Líquido</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuarios.map((u) => {
-                    const f = calcularFolha(u);
-                    return (
-                      <tr key={u.id} style={{ background: "#eee" }}>
-                        <td>{u.nome}</td>
-                        <td>{u.email}</td>
-                        <td>{u.pontos.length}</td>
+                <table
+                  style={{
+                    width: "100%",
+                    color: "#000",
+                    borderCollapse: "collapse",
+                    tableLayout: "fixed",
+                    background: "#fff",
+                  }}
+                >
+                  <thead style={{ background: "#ddd" }}>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Pontos</th>
+                      <th>Salário Base</th>
+                      <th>Adicionais</th>
+                      <th>Benefícios</th>
+                      <th>Descontos</th>
+                      <th>Valor Líquido</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {folhaGerada.map((f) => (
+                      <tr key={f.usuario.id} style={{ background: "#eee" }}>
+                        <td>{f.usuario.nome}</td>
+                        <td>{f.usuario.email}</td>
+                        <td>{f.usuario.pontos.length}</td>
                         <td>R$ {f.salarioBase}</td>
                         <td>R$ {f.adicionais}</td>
                         <td>R$ {f.beneficios}</td>
                         <td>R$ {f.descontos}</td>
                         <td>R$ {f.liquido}</td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <button
               style={{ marginTop: 20 }}
               className="btn-gradient"
               onClick={() => setModalAberto(true)}
-              disabled={pagamentoEnviado}
+              disabled={pagamentoEnviado || !folhaGerada}
             >
               {pagamentoEnviado ? "Pagamentos Enviados" : "Enviar Pagamentos"}
             </button>
