@@ -136,7 +136,8 @@ export default function TelaAdministrador() {
         <th>Email</th>
         <th>Empresa</th>
         <th>Pontos Hoje</th>
-        <th>Documentos</th>
+  <th>Documentos</th>
+  <th>Benefícios</th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -161,6 +162,14 @@ export default function TelaAdministrador() {
               onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
             >
               Gerenciar Documentos
+            </button>
+          </td>
+          <td className="td-documentos">
+            <button
+              className="btn-gradient"
+              onClick={() => navigate("/gerenciar-beneficios", { state: { usuario: u } })}
+            >
+              Gerenciar Benefícios
             </button>
           </td>
           

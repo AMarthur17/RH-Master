@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import documentosRouter from "./routes/documentos.js";
+import beneficiosRouter from "./routes/beneficios.js";
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.use("/", routes);
 
 // Rotas de documentos
 app.use("/documentos", documentosRouter);
+// Rotas de beneficios
+app.use("/beneficios", beneficiosRouter);
 
 // Rota de teste
 app.get("/teste", (req, res) => {

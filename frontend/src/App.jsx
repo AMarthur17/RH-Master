@@ -9,6 +9,7 @@ import TelaColaborador from "./pages/TelaColaborador";
 import TelaAdministrador from "./pages/TelaAdministrador";
 import EditarPerfil from "./pages/EditarPerfil";
 import GerenciarDocumentos from "./pages/GerenciarDocumentos";
+import GerenciarBeneficios from "./pages/GerenciarBeneficios";
 import FolhaPagamento from "./pages/FolhaPagamento"; 
 import HistoricoPontos from "./pages/HistoricoPontos"; 
 import HistoricoPerfil from "./pages/HistoricoPerfil";
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/administrador" element={<TelaAdministrador />} />
         <Route path="/editar-perfil" element={<EditarPerfil />} />
         <Route path="/gerenciar-documentos" element={<GerenciarDocumentos />} />
+  <Route path="/gerenciar-beneficios" element={<GerenciarBeneficios />} />
         <Route path="/folha-pagamento" element={<FolhaPagamento />} />
         <Route path="/historico-pontos" element={<HistoricoPontos />} />
         <Route path="/historico-perfil" element={<HistoricoPerfil />} />

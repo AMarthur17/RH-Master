@@ -92,3 +92,15 @@ CREATE TABLE IF NOT EXISTS registro_ponto_historico (
 );
 
 CREATE INDEX IF NOT EXISTS idx_registro_ponto_historico_registro ON registro_ponto_historico(registro_ponto_id);
+
+-- Tabela de benefícios vinculados a usuários
+CREATE TABLE IF NOT EXISTS beneficios (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  tipo VARCHAR(100) NOT NULL,
+  valor NUMERIC(12,2) DEFAULT 0,
+  descricao TEXT,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_beneficios_usuario ON beneficios(usuario_id);

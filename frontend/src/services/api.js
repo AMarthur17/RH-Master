@@ -1,5 +1,24 @@
 // Define a URL da API via variável de ambiente ou fallback para localhost
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+const resolveApiUrl = (value) => {
+  if (typeof window === "undefined") return value;
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.hostname === "backend" || url.hostname === "0.0.0.0") {
+      url.hostname = window.location.hostname;
+    }
+    if (!url.port) {
+      url.port = url.protocol === "https:" ? "443" : "3000";
+    }
+    return url.toString().replace(/\/$/, "");
+  } catch (error) {
+    console.warn("[API] URL inválida, usando fallback padrão.", error);
+    return `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+};
+
+export const API_URL = resolveApiUrl(rawApiUrl);
 
 // ===== Usuário =====
 export const cadastroUsuario = async (data) => {
@@ -23,7 +42,7 @@ export const loginUsuario = async (data) => {
 };
 
 // ===== Autorização =====
-function getAuthHeaders() {
+export function getAuthHeaders() {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
