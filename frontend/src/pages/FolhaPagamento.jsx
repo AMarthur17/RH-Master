@@ -15,7 +15,7 @@ export default function FolhaPagamento() {
   const token = localStorage.getItem("token");
   const API_URL = "http://localhost:3000";
 
-  // 🔹 Busca benefícios reais de um colaborador
+  // Busca benefícios reais de um colaborador
   const getBeneficiosUsuario = async (usuarioId) => {
     try {
       const res = await fetch(`${API_URL}/beneficios/${usuarioId}`, {
@@ -26,17 +26,16 @@ export default function FolhaPagamento() {
       });
       if (!res.ok) throw new Error("Erro ao buscar benefícios");
       const data = await res.json();
-      return data; // lista de benefícios do usuário
+      return data; 
     } catch (err) {
       console.error(err);
       return [];
     }
   };
 
-  // 🔹 Calcula folha com base nos benefícios reais
+  // Calcula folha sem adicionais
   const calcularFolha = (usuario, beneficiosUsuario) => {
     const salarioBase = 2000;
-    const adicionais = Math.floor(usuario.pontos.length / 2) * 100;
     const beneficios = beneficiosUsuario.reduce(
       (total, b) => total + (b.valor || 0),
       0
@@ -45,12 +44,12 @@ export default function FolhaPagamento() {
     const irrf = salarioBase * 0.075;
     const faltas = usuario.faltas ? usuario.faltas * 50 : 0;
     const descontos = inss + irrf + faltas;
-    const liquido = salarioBase + adicionais + beneficios - descontos;
+    const liquido = salarioBase + beneficios - descontos;
 
-    return { salarioBase, adicionais, beneficios, descontos, liquido };
+    return { salarioBase, beneficios, descontos, liquido };
   };
 
-  // 🔹 Gera folha puxando benefícios de cada usuário
+  // Gera folha puxando benefícios de cada usuário
   const gerarFolha = async () => {
     if (usuarios.length === 0) return;
     setGerando(true);
@@ -77,9 +76,10 @@ export default function FolhaPagamento() {
     }
   };
 
+  // Função para validar senha
   const validarSenha = async () => {
     try {
-      const res = await fetch("http://localhost:3000/usuario/validar-senha", {
+      const res = await fetch(`${API_URL}/usuario/validar-senha`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,6 +96,49 @@ export default function FolhaPagamento() {
     }
   };
 
+  // Função para gerar CSV
+  const gerarCSV = (folha) => {
+    if (!folha || folha.length === 0) return "";
+
+    const headers = [
+      "Nome",
+      "Email",
+      "Pontos",
+      "Salário Base",
+      "Benefícios",
+      "Descontos",
+      "Valor Líquido",
+    ];
+
+    const linhas = folha.map(f => [
+      f.usuario.nome,
+      f.usuario.email,
+      f.usuario.pontos.length,
+      f.salarioBase,
+      f.beneficios,
+      f.descontos,
+      f.liquido,
+    ]);
+
+    return [headers, ...linhas]
+      .map(e => e.join(","))
+      .join("\n");
+  };
+
+  // Função para baixar CSV
+  const downloadCSV = (csv, filename = "folha_pagamento.csv") => {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Envio de pagamentos
   const enviarPagamentos = async () => {
     if (pagamentoEnviado) {
       alert("Pagamentos já foram enviados!");
@@ -110,6 +153,11 @@ export default function FolhaPagamento() {
       alert("Senha incorreta! Tente novamente.");
       return;
     }
+
+    // Gerar CSV e baixar
+    const csv = gerarCSV(folhaGerada);
+    downloadCSV(csv);
+
     alert("Pagamentos enviados com sucesso!");
     setPagamentoEnviado(true);
     setModalAberto(false);
@@ -117,62 +165,27 @@ export default function FolhaPagamento() {
   };
 
   return (
-    <div
-      className="cadastro-container"
-      style={{ display: "flex", justifyContent: "center", padding: 20 }}
-    >
-      <div
-        className="cadastro-card"
-        style={{
-          width: "95%",
-          maxWidth: 1200,
-          padding: 30,
-          borderRadius: 12,
-          background: "#222",
-          color: "#fff",
-          boxShadow: "0 4px 12px #0004",
-        }}
-      >
+    <div className="cadastro-container" style={{ display: "flex", justifyContent: "center", padding: 20 }}>
+      <div className="cadastro-card" style={{ width: "95%", maxWidth: 1200, padding: 30, borderRadius: 12, background: "#222", color: "#fff", boxShadow: "0 4px 12px #0004" }}>
         <h2>Relatório de Folha de Pagamento</h2>
 
         {usuarios.length === 0 ? (
           <p>Nenhum usuário encontrado para gerar a folha.</p>
         ) : (
           <>
-            <button
-              style={{ marginBottom: 15 }}
-              className="btn-gradient"
-              onClick={gerarFolha}
-              disabled={gerando}
-            >
+            <button style={{ marginBottom: 15 }} className="btn-gradient" onClick={gerarFolha} disabled={gerando}>
               {gerando ? "Gerando..." : "Gerar Folha de Pagamento"}
             </button>
 
             {folhaGerada && (
-              <div
-                style={{
-                  marginTop: 20,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  boxShadow: "0 2px 8px #0002",
-                }}
-              >
-                <table
-                  style={{
-                    width: "100%",
-                    color: "#000",
-                    borderCollapse: "collapse",
-                    tableLayout: "fixed",
-                    background: "#fff",
-                  }}
-                >
+              <div style={{ marginTop: 20, borderRadius: 8, overflow: "hidden", boxShadow: "0 2px 8px #0002" }}>
+                <table style={{ width: "100%", color: "#000", borderCollapse: "collapse", tableLayout: "fixed", background: "#fff" }}>
                   <thead style={{ background: "#ddd" }}>
                     <tr>
                       <th>Nome</th>
                       <th>Email</th>
                       <th>Pontos</th>
                       <th>Salário Base</th>
-                      <th>Adicionais</th>
                       <th>Benefícios</th>
                       <th>Descontos</th>
                       <th>Valor Líquido</th>
@@ -185,7 +198,6 @@ export default function FolhaPagamento() {
                         <td>{f.usuario.email}</td>
                         <td>{f.usuario.pontos.length}</td>
                         <td>R$ {f.salarioBase}</td>
-                        <td>R$ {f.adicionais}</td>
                         <td>R$ {f.beneficios}</td>
                         <td>R$ {f.descontos}</td>
                         <td>R$ {f.liquido}</td>
@@ -196,68 +208,23 @@ export default function FolhaPagamento() {
               </div>
             )}
 
-            <button
-              style={{ marginTop: 20 }}
-              className="btn-gradient"
-              onClick={() => setModalAberto(true)}
-              disabled={pagamentoEnviado || !folhaGerada}
-            >
-              {pagamentoEnviado ? "Pagamentos Enviados" : "Enviar Pagamentos"}
+            <button style={{ marginTop: 20 }} className="btn-gradient" onClick={() => setModalAberto(true)} disabled={pagamentoEnviado || !folhaGerada}>
+              {pagamentoEnviado ? "CSV gerado" : "Gerar CSV dos pagamentos"}
             </button>
           </>
         )}
 
-        <button
-          style={{ marginTop: 10 }}
-          className="btn-gradient"
-          onClick={() => navigate(-1)}
-        >
-          Voltar
-        </button>
+        <button style={{ marginTop: 10 }} className="btn-gradient" onClick={() => navigate(-1)}>Voltar</button>
 
         {modalAberto && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(0,0,0,0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 1000,
-            }}
-          >
-            <div
-              style={{
-                background: "#fff",
-                padding: 20,
-                borderRadius: 8,
-                width: 300,
-                textAlign: "center",
-              }}
-            >
+          <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+            <div style={{ background: "#fff", padding: 20, borderRadius: 8, width: 300, textAlign: "center" }}>
               <h3 style={{ color: "#222" }}>Confirmar Envio de Pagamentos</h3>
               <p>Digite sua senha para confirmar:</p>
-              <input
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                style={{ width: "100%", padding: 8, marginBottom: 10 }}
-              />
+              <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} style={{ width: "100%", padding: 8, marginBottom: 10 }} />
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <button className="btn-gradient" onClick={enviarPagamentos}>
-                  Confirmar
-                </button>
-                <button
-                  className="btn-gradient"
-                  style={{ background: "#ccc", color: "#000" }}
-                  onClick={() => setModalAberto(false)}
-                >
-                  Cancelar
-                </button>
+                <button className="btn-gradient" onClick={enviarPagamentos}>Confirmar</button>
+                <button className="btn-gradient" style={{ background: "#ccc", color: "#000" }} onClick={() => setModalAberto(false)}>Cancelar</button>
               </div>
             </div>
           </div>
