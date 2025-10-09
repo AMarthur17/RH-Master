@@ -15,7 +15,7 @@ export default function HistoricoPerfil() {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `http://localhost:3000/historico-perfil/${usuario.id}`,
+          `http://localhost:3000/usuario/${usuario.id}/historico`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }
@@ -34,32 +34,34 @@ export default function HistoricoPerfil() {
 
   return (
     <div className="cadastro-container">
-      <div className="cadastro-card" style={{ maxWidth: 700 }}>
+      <div className="cadastro-card" style={{ maxWidth: 900 }}>
         <h2>Histórico de Alterações: {usuario.nome}</h2>
 
         {historico.length === 0 ? (
           <p>Nenhuma alteração encontrada.</p>
         ) : (
-          <table style={{ width: "100%", marginTop: 16, color: "#fff" }}>
-            <thead>
-              <tr>
-                <th>Campo</th>
-                <th>Valor Antigo</th>
-                <th>Valor Novo</th>
-                <th>Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historico.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.campo}</td>
-                  <td>{item.valor_antigo}</td>
-                  <td>{item.valor_novo}</td>
-                  <td>{new Date(item.data_hora).toLocaleString("pt-BR")}</td>
+          <div className="historico-table-wrapper">
+            <table className="historico-table">
+              <thead>
+                <tr>
+                  <th>Campo</th>
+                  <th>Valor Antigo</th>
+                  <th>Valor Novo</th>
+                  <th>Data</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {historico.map((item, idx) => (
+                  <tr key={idx}>
+                    <td>{item.campo_alterado}</td>
+                    <td>{item.valor_antigo}</td>
+                    <td>{item.valor_novo}</td>
+                    <td>{new Date(item.data_hora).toLocaleString("pt-BR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <button

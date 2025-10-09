@@ -88,7 +88,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro no login:", err);
-    res.status(500).json({ error: "Erro no servidor" });
+    res.status(500).json({ error: "Erro no servidor." });
   }
 });
 
@@ -106,7 +106,6 @@ router.post(
     }
 
     try {
-      // Busca hash da senha no banco
       const result = await db.query(
         "SELECT senha FROM usuario WHERE id = $1",
         [usuarioId]
@@ -157,19 +156,32 @@ router.put("/:id", autenticar, async (req, res) => {
     let idx = 1;
 
     for (const campo in campos) {
-      if (campos[campo] !== undefined) {
-        if (campo === "senha") campos[campo] = await bcrypt.hash(campos[campo], 10);
-        atualizacoes.push(`${campo} = $${idx}`);
-        valores.push(campos[campo]);
-        if (String(oldUser.rows[0][campo]) !== String(campos[campo])) {
-          await db.query(
-            `INSERT INTO historico_usuario (usuario_id, campo_alterado, valor_antigo, valor_novo, alterado_por)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [usuarioId, campo, oldUser.rows[0][campo], campos[campo], alterado_por || 0]
-          );
-        }
-        idx++;
+      let valorNovo = campos[campo];
+
+      // Ignora campos que não foram enviados
+      if (valorNovo === undefined || valorNovo === null) continue;
+
+      // Para senha: ignora se vazio
+      if (campo === "senha") {
+        if (valorNovo.trim() === "") continue; // ignora se não digitou
+        valorNovo = await bcrypt.hash(valorNovo, 10);
       }
+
+      // Só registra no histórico se mudou de verdade
+      if (String(oldUser.rows[0][campo]) !== String(valorNovo)) {
+        await db.query(
+          `INSERT INTO historico_usuario (usuario_id, campo_alterado, valor_antigo, valor_novo, alterado_por)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [usuarioId, campo, oldUser.rows[0][campo], valorNovo, alterado_por || 0]
+        );
+      } else {
+        // Se não mudou, não inclui no UPDATE
+        continue;
+      }
+
+      atualizacoes.push(`${campo} = $${idx}`);
+      valores.push(valorNovo);
+      idx++;
     }
 
     if (atualizacoes.length === 0) return res.status(400).json({ error: "Nenhuma alteração enviada." });
@@ -183,6 +195,7 @@ router.put("/:id", autenticar, async (req, res) => {
     res.status(500).json({ error: "Erro ao atualizar usuário" });
   }
 });
+
 
 // Histórico de alterações
 router.get("/:id/historico", async (req, res) => {

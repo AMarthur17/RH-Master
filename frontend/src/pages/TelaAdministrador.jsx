@@ -11,7 +11,6 @@ export default function TelaAdministrador() {
   const [nomeBusca, setNomeBusca] = useState("");
   const [usuarios, setUsuarios] = useState([]);
 
-  // Redireciona para login se admin não existir
   if (!admin) {
     return (
       <div className="cadastro-container">
@@ -26,15 +25,12 @@ export default function TelaAdministrador() {
     );
   }
 
-  // Buscar usuários
   const buscarUsuarios = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
         `http://localhost:3000/usuario?nome=${nomeBusca}&empresa=${admin.empresa}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (!res.ok) throw new Error("Erro ao buscar usuários");
 
@@ -58,21 +54,16 @@ export default function TelaAdministrador() {
     }
   };
 
-  // Função para gerar folha de pagamento com todos os usuários da empresa, exceto o admin
   const gerarFolha = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
         `http://localhost:3000/usuario?empresa=${admin.empresa}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (!res.ok) throw new Error("Erro ao buscar usuários para folha");
 
       let usuariosTodos = await res.json();
-
-      // Filtrar o administrador da lista
       usuariosTodos = usuariosTodos.filter(u => u.id !== admin.id);
 
       const usuariosComPontos = await Promise.all(
@@ -98,7 +89,6 @@ export default function TelaAdministrador() {
       <div className="cadastro-card">
         <h2>Bem-vindo, Administrador!</h2>
 
-        {/* Bloco de busca */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input
@@ -108,12 +98,9 @@ export default function TelaAdministrador() {
               onChange={(e) => setNomeBusca(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn-gradient" onClick={buscarUsuarios}>
-              Buscar
-            </button>
+            <button className="btn-gradient" onClick={buscarUsuarios}>Buscar</button>
           </div>
 
-          {/* Botão de gerar folha */}
           <button
             className="btn-gradient"
             onClick={gerarFolha}
@@ -132,78 +119,104 @@ export default function TelaAdministrador() {
         </div>
 
         {/* Tabela de usuários */}
-        {usuarios.length > 0 && (
-          <table
-            style={{
-              marginTop: 20,
-              width: "100%",
-              color: "#fff",
-              borderRadius: 8,
-              overflow: "hidden",
-              boxShadow: "0 2px 8px #0002",
-            }}
-          >
-            <thead style={{ background: "#222c" }}>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Empresa</th>
-                <th>Pontos Hoje</th>
-                <th>Documentos</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u) => (
-                <tr key={u.id} style={{ background: "#222a" }}>
-                  <td>{u.nome}</td>
-                  <td>{u.email}</td>
-                  <td>{u.empresa}</td>
-                  <td>
-                    {u.pontos.length > 0
-                      ? u.pontos
-                          .map((p) => `${p.tipo} às ${new Date(p.data_hora).toLocaleTimeString()}`)
-                          .join(", ")
-                      : "Nenhum ponto"}
-                  </td>
-                  <td>
-                    <button
-                      className="btn-gradient"
-                      style={{ fontSize: 12, padding: "4px 10px" }}
-                      onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
-                    >
-                      Gerenciar Documentos
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className="btn-gradient"
-                      style={{ fontSize: 12, padding: "4px 10px", marginRight: 6 }}
-                      onClick={() => navigate("/editar-perfil", { state: { usuario: u } })}
-                    >
-                      Editar Perfil
-                    </button>
-                    <button
-                      className="btn-gradient"
-                      style={{ fontSize: 12, padding: "4px 10px", marginRight: 6 }}
-                      onClick={() => navigate("/historico-perfil", { state: { usuario: u } })}
-                    >
-                      Histórico
-                    </button>
-                    <button
-                      className="btn-gradient"
-                      style={{ fontSize: 12, padding: "4px 10px" }}
-                      onClick={() => navigate("/historico-pontos", { state: { usuario: u } })}
-                    >
-                      Histórico de Pontos
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+{usuarios.length > 0 && (
+  <table
+    style={{
+      marginTop: 20,
+      width: "100%",
+      color: "#fff",
+      borderRadius: 8,
+      overflow: "hidden",
+      boxShadow: "0 2px 8px #0002",
+    }}
+  >
+    <thead style={{ background: "#222c" }}>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Empresa</th>
+        <th>Pontos Hoje</th>
+        <th>Documentos</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {usuarios.map((u) => (
+        <tr key={u.id} style={{ background: "#222a" }}>
+          <td>{u.nome}</td>
+          <td>{u.email}</td>
+          <td>{u.empresa}</td>
+          <td>
+            {u.pontos.length > 0
+              ? u.pontos
+                  .map((p) => `${p.tipo} às ${new Date(p.data_hora).toLocaleTimeString()}`)
+                  .join(", ")
+              : "Nenhum ponto"}
+          </td>
 
+          {/* Documentos */}
+          <td className="td-documentos">
+            <button
+              className="btn-gradient"
+              onClick={() => navigate("/gerenciar-documentos", { state: { usuario: u } })}
+            >
+              Gerenciar Documentos
+            </button>
+          </td>
+          
+          {/* Ações */}
+          <td style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+            <button
+              className="btn-gradient"
+              style={{
+                flex: 1,
+                width: "100%",
+                borderRadius: 0,
+                fontSize: 14,
+                padding: "8px 0",
+                marginBottom: 2,
+              }}
+              onClick={() => navigate("/editar-perfil", { state: { usuario: u } })}
+            >
+              Editar Perfil
+            </button>
+            <button
+              className="btn-gradient"
+              style={{
+                flex: 1,
+                width: "100%",
+                borderRadius: 0,
+                fontSize: 14,
+                padding: "8px 0",
+                marginBottom: 2,
+              }}
+              onClick={() =>
+                navigate("/historico-perfil", { state: { usuario: u } })
+              }
+            >
+              Histórico de Edições
+            </button>
+            <button
+              className="btn-gradient"
+              style={{
+                flex: 1,
+                width: "100%",
+                borderRadius: 0,
+                fontSize: 14,
+                padding: "8px 0",
+              }}
+              onClick={() =>
+                navigate("/historico-pontos", { state: { usuario: u } })
+              }
+            >
+              Histórico de Pontos
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
         <button
           style={{ marginTop: 20 }}
           className="btn-gradient"

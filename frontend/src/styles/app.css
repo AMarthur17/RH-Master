@@ -40,3 +40,303 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+/* Fundo ocupando toda a tela */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(135deg, #0c2b30 0%, #123b41 50%, #163f44 100%);
+  background-attachment: fixed;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Container centralizado */
+.cadastro-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+}
+
+/* Card central (efeito futurista) */
+.cadastro-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 650px;
+  padding: 40px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  animation: fadeInUp 0.8s ease-in-out;
+}
+
+/* Logo */
+.cadastro-logo {
+  width: 120px;
+  margin-bottom: 20px;
+}
+
+/* Títulos */
+.cadastro-card h2 {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #d1d1d1;
+  margin-bottom: 20px;
+}
+
+/* Grid do formulário */
+.cadastro-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* duas colunas */
+  gap: 20px;
+  width: 100%;
+}
+
+/* Inputs e selects */
+.cadastro-form input,
+.cadastro-form select {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transition: 0.3s;
+}
+
+.cadastro-form input::placeholder {
+  color: #dcdcdc;
+}
+
+.cadastro-form input:focus,
+.cadastro-form select:focus {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 8px #00c6ff;
+}
+
+/* Botão futurista */
+.btn-gradient {
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 20px rgba(0, 114, 255, 0.6);
+}
+
+/* Botões de Cargo (radio style) */
+.cargo-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  grid-column: 1 / span 2;
+}
+
+.btn-selected,
+.btn-unselected {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-selected {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 114, 255, 0.5);
+}
+
+.btn-unselected {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.btn-selected:hover,
+.btn-unselected:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Select e Botão ocupam duas colunas */
+.cadastro-form select,
+.cadastro-form .btn-gradient {
+  grid-column: 1 / span 2;
+}
+
+/* Responsividade: telas pequenas ficam 1 coluna */
+@media (max-width: 768px) {
+  .cadastro-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cadastro-form select,
+  .cadastro-form .btn-gradient,
+  .cargo-buttons {
+    grid-column: auto;
+    flex-direction: column;
+  }
+
+  .cargo-buttons button {
+    width: 100%;
+  }
+}
+
+/* Animação */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ====== HISTÓRICO DE PERFIL ====== */
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table-wrapper table {
+  width: 100%;
+  min-width: 700px; /* tabela mínima larga */
+  border-collapse: collapse;
+  margin-top: 16px;
+  color: #fff;
+  table-layout: auto;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+  padding: 8px 12px;
+  text-align: left;
+  word-break: break-word;
+  min-width: 120px;
+}
+
+.table-wrapper th {
+  background-color: rgba(0, 0, 0, 0.4);
+  font-weight: bold;
+}
+
+.table-wrapper tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .table-wrapper table,
+  .table-wrapper thead,
+  .table-wrapper tbody,
+  .table-wrapper th,
+  .table-wrapper td,
+  .table-wrapper tr {
+    display: block;
+  }
+
+  .table-wrapper th {
+    display: none;
+  }
+
+  .table-wrapper td {
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .table-wrapper td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    font-weight: bold;
+  }
+}
+
+/* HISTÓRICO DE PERFIL */
+.historico-table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* scroll horizontal se necessário */
+  margin-top: 16px;
+}
+
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* garante que colunas grandes não quebrem */
+  color: #fff;
+}
+
+.historico-table th,
+.historico-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: left;
+}
+
+.historico-table th {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.historico-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.td-botoes {
+  display: flex;
+  flex-direction: column; /* empilha verticalmente */
+  gap: 2px; /* espaçamento entre botões */
+  padding: 0; /* remove padding do td */
+}
+
+.td-botoes button {
+  flex: 1; /* ocupa espaço proporcional */
+  width: 100%; /* ocupa toda largura do td */
+  border-radius: 0; /* remove arredondamento */
+  font-size: 14px;
+  padding: 8px 0; /* altura uniforme */
+}
+
+
+.td-documentos button {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  padding: 8px 0;
+}
