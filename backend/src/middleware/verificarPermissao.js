@@ -3,7 +3,7 @@ import db from "../db.js";
 export const verificarPermissao = (acao) => {
   return async (req, res, next) => {
     try {
-      const usuarioId = req.usuario.id; // definido pelo middleware autenticar
+      const usuarioId = req.user.id; // definido pelo middleware autenticar
       const documentoId = Number(
         req.params.documento_id || req.body.documento_id
       );
@@ -12,22 +12,24 @@ export const verificarPermissao = (acao) => {
         return res.status(400).json({ error: "ID do documento inválido" });
       }
 
+      // Verifica permissão do usuário para a ação no documento
       const result = await db.query(
-        `SELECT * FROM documento_permissao
-                 WHERE documento_id = $1 AND usuario_id = $2`,
+        `SELECT ${acao} 
+         FROM permissoes_documentos
+         WHERE documento_id = $1 AND usuario_id = $2`,
         [documentoId, usuarioId]
       );
 
-      const permissao = result.rows[0];
+      const permitido = result.rows[0]?.[acao] || false;
 
-      if (!permissao || !permissao[acao]) {
-        await db.query(
-          `INSERT INTO acesso_documento_negado
-                     (documento_id, usuario_id, acao, data_hora)
-                     VALUES ($1, $2, $3, NOW())`,
-          [documentoId, usuarioId, acao]
-        );
+      // Registrar tentativa de acesso na tabela logs_acesso
+      await db.query(
+        `INSERT INTO logs_acesso (usuario_id, documento_id, acao, resultado, data)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [usuarioId, documentoId, acao, permitido ? "permitido" : "negado"]
+      );
 
+      if (!permitido) {
         return res.status(403).json({ error: "Acesso não autorizado" });
       }
 
