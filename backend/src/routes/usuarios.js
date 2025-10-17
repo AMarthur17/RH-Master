@@ -5,6 +5,7 @@ import * as fs from "fs";
 import path from "path";
 import { autenticar } from "../middleware/auth.js";
 import { permitir } from "../middleware/rbac.js";
+import { validarCPF } from "../utils/cpf.js"; // <-- import da função de validação
 
 const router = express.Router();
 
@@ -24,8 +25,10 @@ const createUserFolder = (userId, userName) => {
     const uploadsDir = "uploads/";
     const userFolderName = generateUserFolderName(userId, userName);
     const userFolderPath = path.join(uploadsDir, userFolderName);
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-    if (!fs.existsSync(userFolderPath)) fs.mkdirSync(userFolderPath, { recursive: true });
+    if (!fs.existsSync(uploadsDir))
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    if (!fs.existsSync(userFolderPath))
+      fs.mkdirSync(userFolderPath, { recursive: true });
     console.log(`[CADASTRO] Pasta criada para usuário: ${userFolderPath}`);
     return userFolderPath;
   } catch (error) {
@@ -39,16 +42,27 @@ router.post("/", async (req, res) => {
   try {
     const { nome, cpf, empresa, idade, email, senha, cargo } = req.body;
     if (!nome || !cpf || !empresa || !idade || !email || !senha || !cargo) {
-      return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+      return res
+        .status(400)
+        .json({ error: "Todos os campos são obrigatórios." });
     }
+
+    // ✅ Validar CPF antes de prosseguir
+    if (!validarCPF(cpf)) {
+      return res.status(400).json({ error: "CPF inválido." });
+    }
+
     const hashedSenha = await bcrypt.hash(senha, 10);
+
     const query = `
       INSERT INTO usuario (nome, cpf, empresa, idade, email, senha, cargo)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, nome, email, cargo, empresa
     `;
     const values = [nome, cpf, empresa, idade, email, hashedSenha, cargo];
+
     const result = await db.query(query, values);
+
     createUserFolder(result.rows[0].id, result.rows[0].nome);
     res.status(201).json({ usuario: result.rows[0] });
   } catch (error) {
@@ -65,15 +79,18 @@ router.post("/", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
-    if (!email || !senha) return res.status(400).json({ error: "Email e senha são obrigatórios" });
+    if (!email || !senha)
+      return res.status(400).json({ error: "Email e senha são obrigatórios" });
 
     const query = "SELECT * FROM usuario WHERE email = $1";
     const result = await db.query(query, [email]);
-    if (result.rows.length === 0) return res.status(401).json({ error: "Usuário não encontrado" });
+    if (result.rows.length === 0)
+      return res.status(401).json({ error: "Usuário não encontrado" });
 
     const usuario = result.rows[0];
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaCorreta) return res.status(401).json({ error: "Senha incorreta" });
+    if (!senhaCorreta)
+      return res.status(401).json({ error: "Senha incorreta" });
 
     const jwt = await import("jsonwebtoken");
     const token = jwt.default.sign(
@@ -84,7 +101,13 @@ router.post("/login", async (req, res) => {
 
     res.json({
       token,
-      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, cargo: usuario.cargo, empresa: usuario.empresa },
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        cargo: usuario.cargo,
+        empresa: usuario.empresa,
+      },
     });
   } catch (err) {
     console.error("Erro no login:", err);
@@ -98,21 +121,24 @@ router.post(
   autenticar,
   permitir(["admin", "administrador"]),
   async (req, res) => {
-    const usuarioId = req.user.id; // vem do middleware auth
+    const usuarioId = req.user.id;
     const { senha } = req.body;
 
     if (!senha) {
-      return res.status(400).json({ valido: false, erro: "Senha não informada" });
+      return res
+        .status(400)
+        .json({ valido: false, erro: "Senha não informada" });
     }
 
     try {
-      const result = await db.query(
-        "SELECT senha FROM usuario WHERE id = $1",
-        [usuarioId]
-      );
+      const result = await db.query("SELECT senha FROM usuario WHERE id = $1", [
+        usuarioId,
+      ]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ valido: false, erro: "Usuário não encontrado" });
+        return res
+          .status(404)
+          .json({ valido: false, erro: "Usuário não encontrado" });
       }
 
       const senhaValida = await bcrypt.compare(senha, result.rows[0].senha);
@@ -125,30 +151,46 @@ router.post(
   }
 );
 
-// Buscar usuários por nome
-router.get("/", autenticar, permitir(["admin", "administrador"]), async (req, res) => {
-  try {
-    const { nome, empresa } = req.query;
-    let query = "SELECT id, nome, email, empresa, cargo FROM usuario WHERE 1=1";
-    const values = [];
-    if (empresa) { values.push(empresa); query += ` AND empresa = $${values.length}`; }
-    if (nome) { values.push(`%${nome}%`); query += ` AND nome ILIKE $${values.length}`; }
-    const result = await db.query(query, values);
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Erro ao buscar usuários:", err);
-    res.status(500).json({ error: "Erro ao buscar usuários" });
+// Buscar usuários por nome e empresa
+router.get(
+  "/",
+  autenticar,
+  permitir(["admin", "administrador"]),
+  async (req, res) => {
+    try {
+      const { nome, empresa } = req.query;
+      let query =
+        "SELECT id, nome, email, empresa, cargo FROM usuario WHERE 1=1";
+      const values = [];
+      if (empresa) {
+        values.push(empresa);
+        query += ` AND empresa = $${values.length}`;
+      }
+      if (nome) {
+        values.push(`%${nome}%`);
+        query += ` AND nome ILIKE $${values.length}`;
+      }
+      const result = await db.query(query, values);
+      res.json(result.rows);
+    } catch (err) {
+      console.error("Erro ao buscar usuários:", err);
+      res.status(500).json({ error: "Erro ao buscar usuários" });
+    }
   }
-});
+);
 
 // Atualizar usuário e registrar histórico
 router.put("/:id", autenticar, async (req, res) => {
   try {
     const usuarioId = req.params.id;
-    const { nome, cpf, empresa, idade, email, senha, cargo, alterado_por } = req.body;
+    const { nome, cpf, empresa, idade, email, senha, cargo, alterado_por } =
+      req.body;
 
-    const oldUser = await db.query("SELECT * FROM usuario WHERE id = $1", [usuarioId]);
-    if (oldUser.rows.length === 0) return res.status(404).json({ error: "Usuário não encontrado." });
+    const oldUser = await db.query("SELECT * FROM usuario WHERE id = $1", [
+      usuarioId,
+    ]);
+    if (oldUser.rows.length === 0)
+      return res.status(404).json({ error: "Usuário não encontrado." });
 
     const campos = { nome, cpf, empresa, idade, email, senha, cargo };
     const atualizacoes = [];
@@ -157,25 +199,33 @@ router.put("/:id", autenticar, async (req, res) => {
 
     for (const campo in campos) {
       let valorNovo = campos[campo];
-
-      // Ignora campos que não foram enviados
       if (valorNovo === undefined || valorNovo === null) continue;
 
-      // Para senha: ignora se vazio
+      // Validar CPF ao atualizar
+      if (campo === "cpf") {
+        if (!validarCPF(valorNovo)) {
+          return res.status(400).json({ error: "CPF inválido." });
+        }
+      }
+
       if (campo === "senha") {
-        if (valorNovo.trim() === "") continue; // ignora se não digitou
+        if (valorNovo.trim() === "") continue;
         valorNovo = await bcrypt.hash(valorNovo, 10);
       }
 
-      // Só registra no histórico se mudou de verdade
       if (String(oldUser.rows[0][campo]) !== String(valorNovo)) {
         await db.query(
           `INSERT INTO historico_usuario (usuario_id, campo_alterado, valor_antigo, valor_novo, alterado_por)
            VALUES ($1, $2, $3, $4, $5)`,
-          [usuarioId, campo, oldUser.rows[0][campo], valorNovo, alterado_por || 0]
+          [
+            usuarioId,
+            campo,
+            oldUser.rows[0][campo],
+            valorNovo,
+            alterado_por || 0,
+          ]
         );
       } else {
-        // Se não mudou, não inclui no UPDATE
         continue;
       }
 
@@ -184,9 +234,12 @@ router.put("/:id", autenticar, async (req, res) => {
       idx++;
     }
 
-    if (atualizacoes.length === 0) return res.status(400).json({ error: "Nenhuma alteração enviada." });
+    if (atualizacoes.length === 0)
+      return res.status(400).json({ error: "Nenhuma alteração enviada." });
 
-    const updateQuery = `UPDATE usuario SET ${atualizacoes.join(", ")} WHERE id = $${idx} RETURNING *`;
+    const updateQuery = `UPDATE usuario SET ${atualizacoes.join(
+      ", "
+    )} WHERE id = $${idx} RETURNING *`;
     valores.push(usuarioId);
     const result = await db.query(updateQuery, valores);
     res.json({ usuario: result.rows[0] });
@@ -195,7 +248,6 @@ router.put("/:id", autenticar, async (req, res) => {
     res.status(500).json({ error: "Erro ao atualizar usuário" });
   }
 });
-
 
 // Histórico de alterações
 router.get("/:id/historico", async (req, res) => {
