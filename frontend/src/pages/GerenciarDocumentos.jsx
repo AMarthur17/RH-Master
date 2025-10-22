@@ -78,7 +78,6 @@ export default function GerenciarDocumentos() {
       return;
     }
 
-    // Validar tipos permitidos
     const allowed = ["pdf", "jpg", "jpeg", "png", "docx"];
     const ext = uploadFile.name.split(".").pop().toLowerCase();
     if (!allowed.includes(ext)) {
@@ -89,13 +88,10 @@ export default function GerenciarDocumentos() {
     setUploading(true);
 
     try {
-      // Normalizar nome do arquivo
       const normalizedFile = new File(
         [uploadFile],
         normalizeFileName(uploadFile.name),
-        {
-          type: uploadFile.type,
-        }
+        { type: uploadFile.type }
       );
 
       const formData = new FormData();
@@ -116,7 +112,7 @@ export default function GerenciarDocumentos() {
       alert("Documento enviado com sucesso!");
       setUploadFile(null);
       setShowUpload(false);
-      buscarDocumentos(); // Atualizar lista
+      buscarDocumentos();
     } catch (err) {
       console.error(err);
       alert("Erro ao enviar documento.");
@@ -140,14 +136,46 @@ export default function GerenciarDocumentos() {
       if (!res.ok) throw new Error("Erro ao remover documento");
 
       alert("Documento removido com sucesso!");
-      buscarDocumentos(); // Atualizar lista
+      buscarDocumentos();
     } catch (err) {
       console.error(err);
       alert("Erro ao remover documento.");
     }
   };
 
-  // Função para obter o tipo do arquivo baseado na extensão
+  // Função para alternar permissão de visualização
+  // Função para alternar permissão de visualização
+  const handleTogglePermissao = async (docId, podeVer) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `http://localhost:3000/documentos/${docId}/permissao`,
+        {
+          method: "POST", // ✅ corrigido de PUT para POST
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            usuario_id: usuario.id, // ✅ quem é o colaborador dono do documento
+            pode_visualizar: podeVer,
+            pode_editar: false,
+            pode_excluir: false,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Erro ao atualizar permissão");
+
+      alert("Permissão atualizada com sucesso!");
+      buscarDocumentos();
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao alterar permissão do documento.");
+    }
+  };
+  // Função para obter o tipo do arquivo
   const getFileTypeLabel = (fileName) => {
     const ext = fileName.split(".").pop().toLowerCase();
     if (ext === "pdf") return "PDF";
@@ -157,14 +185,10 @@ export default function GerenciarDocumentos() {
     return ext.toUpperCase();
   };
 
-  // Carregar documentos ao montar o componente
   useEffect(() => {
-    if (usuario) {
-      buscarDocumentos();
-    }
+    if (usuario) buscarDocumentos();
   }, [usuario]);
 
-  // Redirecionar se não tiver usuário
   if (!usuario) {
     return (
       <div className="cadastro-container">
@@ -184,7 +208,7 @@ export default function GerenciarDocumentos() {
   return (
     <div className="cadastro-container">
       <div className="cadastro-card">
-        {/* Header com informações do usuário */}
+        {/* Header */}
         <div
           style={{
             marginBottom: 32,
@@ -227,8 +251,7 @@ export default function GerenciarDocumentos() {
           </div>
         </div>
 
-
-        {/* Seção de Upload */}
+        {/* Upload */}
         <div style={{ marginBottom: 32 }}>
           <div
             style={{
@@ -239,19 +262,9 @@ export default function GerenciarDocumentos() {
               width: "100%",
             }}
           >
-            <h3
-              style={{
-                margin: 0,
-                color: "#fff",
-                textAlign: "left",
-                flex: "0 0 auto",
-              }}
-            >
-              Adicionar Documento
-            </h3>
+            <h3 style={{ margin: 0, color: "#fff" }}>Adicionar Documento</h3>
             <button
               className="btn-gradient"
-              style={{ flex: "0 0 auto" }}
               onClick={() => {
                 setShowUpload(!showUpload);
                 setUploadFile(null);
@@ -286,13 +299,8 @@ export default function GerenciarDocumentos() {
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,.docx"
                   onChange={(e) => setUploadFile(e.target.files[0])}
-                  style={{
-                    color: "#fff",
-                    flex: 1,
-                    minWidth: 250,
-                  }}
+                  style={{ color: "#fff", flex: 1, minWidth: 250 }}
                 />
-
                 {uploadFile && (
                   <div
                     style={{
@@ -327,7 +335,6 @@ export default function GerenciarDocumentos() {
                     </span>
                   </div>
                 )}
-
                 <button
                   className="btn-gradient"
                   type="submit"
@@ -344,20 +351,13 @@ export default function GerenciarDocumentos() {
           )}
         </div>
 
-        {/* Lista de Documentos */}
+        {/* Lista de documentos */}
         <div>
           <h3 style={{ marginBottom: 16, color: "#fff" }}>
             Documentos ({documentos.length})
           </h3>
-
           {loading ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: 40,
-                color: "#ccc",
-              }}
-            >
+            <div style={{ textAlign: "center", padding: 40, color: "#ccc" }}>
               Carregando documentos...
             </div>
           ) : documentos.length > 0 ? (
@@ -409,6 +409,26 @@ export default function GerenciarDocumentos() {
                   </div>
 
                   <div style={{ display: "flex", gap: 8 }}>
+                    {/* NOVO BOTÃO DE PERMISSÃO */}
+                    <button
+                      className="btn-gradient"
+                      style={{
+                        fontSize: 14,
+                        padding: "8px 16px",
+                        background: doc.pode_visualizar
+                          ? "linear-gradient(135deg, #00c851 0%, #007e33 100%)"
+                          : "linear-gradient(135deg, #ff4444 0%, #cc0000 100%)",
+                      }}
+                      onClick={() =>
+                        handleTogglePermissao(doc.id, !doc.pode_visualizar)
+                      }
+                    >
+                      {doc.pode_visualizar
+                        ? "Colaborador pode ver"
+                        : "Colaborador não pode ver"}
+                    </button>
+
+                    {/* BOTÕES EXISTENTES */}
                     <button
                       className="btn-gradient"
                       style={{
@@ -453,7 +473,6 @@ export default function GerenciarDocumentos() {
           )}
         </div>
 
-        {/* Botão Voltar */}
         <div style={{ marginTop: 32, textAlign: "center" }}>
           <button
             className="btn-gradient"

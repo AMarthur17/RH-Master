@@ -3,26 +3,49 @@ import db from "../db.js";
 export const verificarPermissao = (acao) => {
   return async (req, res, next) => {
     try {
-      const usuarioId = req.user.id; // definido pelo middleware autenticar
+      const usuarioId = req.user.id;
       const documentoId = Number(
         req.params.documento_id || req.body.documento_id
+      );
+
+      console.log(
+        "[PERMISSAO] usuarioId:",
+        usuarioId,
+        "documentoId:",
+        documentoId,
+        "acao:",
+        acao,
+        "perfil:",
+        req.user.role || req.user.perfil
       );
 
       if (Number.isNaN(documentoId)) {
         return res.status(400).json({ error: "ID do documento inválido" });
       }
 
-      // Verifica permissão do usuário para a ação no documento
+      const perfil = (req.user.role || req.user.perfil || "").toLowerCase();
+      if (perfil === "admin" || perfil === "administrador") {
+        await db.query(
+          `INSERT INTO logs_acesso (usuario_id, documento_id, acao, resultado, data)
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [usuarioId, documentoId, acao, "permitido"]
+        );
+        return next();
+      }
+
+      const acoesValidas = ["pode_visualizar", "pode_editar", "pode_excluir"];
+      const coluna = acoesValidas.includes(acao) ? acao : null;
+      if (!coluna) {
+        return res.status(400).json({ error: "Ação de permissão inválida" });
+      }
+
       const result = await db.query(
-        `SELECT ${acao} 
-         FROM permissoes_documentos
-         WHERE documento_id = $1 AND usuario_id = $2`,
+        `SELECT ${coluna} AS permitido FROM documento_permissao WHERE documento_id = $1 AND usuario_id = $2`,
         [documentoId, usuarioId]
       );
 
-      const permitido = result.rows[0]?.[acao] || false;
+      const permitido = result.rows[0]?.permitido || false;
 
-      // Registrar tentativa de acesso na tabela logs_acesso
       await db.query(
         `INSERT INTO logs_acesso (usuario_id, documento_id, acao, resultado, data)
          VALUES ($1, $2, $3, $4, NOW())`,
@@ -30,6 +53,9 @@ export const verificarPermissao = (acao) => {
       );
 
       if (!permitido) {
+        console.warn(
+          `[PERMISSAO NEGADA] Usuário ${usuarioId} tentou ${acao} no documento ${documentoId}`
+        );
         return res.status(403).json({ error: "Acesso não autorizado" });
       }
 

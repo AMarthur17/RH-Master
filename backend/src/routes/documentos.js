@@ -11,12 +11,10 @@ import { verificarPermissao } from "../middleware/verificarPermissao.js";
 const router = express.Router();
 
 // ====== UPLOAD ======
-
-// Garantir que a pasta uploads existe
 const uploadsDir = "uploads/";
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// Funções auxiliares para criar pasta de usuário
+// Funções auxiliares
 const generateUserFolderName = (userId, userName) => {
   const normalizedName = userName
     .normalize("NFD")
@@ -93,13 +91,20 @@ router.post(
   }
 );
 
-// Listar documentos de um usuário
+// ====== LISTAGEM DOCUMENTOS ======
+
+// Listar documentos de um usuário ou com permissão
 router.get("/:usuario_id", autenticar, async (req, res) => {
   const { usuario_id } = req.params;
+
   try {
     const result = await db.query(
-      `SELECT id, nome_arquivo, caminho_arquivo, data_upload
-       FROM documentos WHERE usuario_id = $1`,
+      `SELECT d.id, d.nome_arquivo, d.caminho_arquivo, d.data_upload
+       FROM documentos d
+       LEFT JOIN documento_permissao p
+       ON d.id = p.documento_id AND p.usuario_id = $1
+       WHERE d.usuario_id = $1 OR p.pode_visualizar = true
+       ORDER BY d.data_upload DESC`,
       [usuario_id]
     );
 
@@ -116,6 +121,39 @@ router.get("/:usuario_id", autenticar, async (req, res) => {
   } catch (err) {
     console.error("[LISTAGEM] Erro:", err);
     res.status(500).json({ error: "Erro ao buscar documentos." });
+  }
+});
+
+// ✅ NOVA ROTA: Documentos compartilhados com o colaborador
+router.get("/compartilhados/:colaborador_id", autenticar, async (req, res) => {
+  const { colaborador_id } = req.params;
+
+  try {
+    const result = await db.query(
+      `SELECT d.id, d.nome_arquivo, d.caminho_arquivo, d.data_upload, u.nome AS dono
+       FROM documentos d
+       INNER JOIN documento_permissao p ON d.id = p.documento_id
+       INNER JOIN usuario u ON d.usuario_id = u.id
+       WHERE p.usuario_id = $1 AND p.pode_visualizar = true
+       ORDER BY d.data_upload DESC`,
+      [colaborador_id]
+    );
+
+    const documentosComUrl = result.rows
+      .filter((doc) =>
+        fs.existsSync(path.join(uploadsDir, doc.caminho_arquivo))
+      )
+      .map((doc) => ({
+        ...doc,
+        url_arquivo: `http://localhost:3000/uploads/${doc.caminho_arquivo}`,
+      }));
+
+    res.json(documentosComUrl);
+  } catch (err) {
+    console.error("[COMPARTILHADOS] Erro:", err);
+    res
+      .status(500)
+      .json({ error: "Erro ao buscar documentos compartilhados." });
   }
 });
 

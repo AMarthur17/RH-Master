@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS beneficios (
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE INDEX IF NOT EXISTS idx_beneficios_usuario 
   ON beneficios(usuario_id);
 
@@ -129,6 +130,30 @@ CREATE INDEX IF NOT EXISTS idx_registro_ponto_usuario_data
 
 CREATE INDEX IF NOT EXISTS idx_documentos_usuario 
   ON documentos(usuario_id);
+
+-- ==============================
+-- PERMISSÕES DE DOCUMENTOS
+-- ==============================
+CREATE TABLE IF NOT EXISTS documento_permissao (
+  documento_id INTEGER NOT NULL REFERENCES documentos(id) ON DELETE CASCADE,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  pode_visualizar BOOLEAN DEFAULT FALSE,
+  pode_editar BOOLEAN DEFAULT FALSE,
+  pode_excluir BOOLEAN DEFAULT FALSE,
+  PRIMARY KEY (documento_id, usuario_id)
+);
+
+-- ==============================
+-- LOGS DE ACESSO A DOCUMENTOS
+-- ==============================
+CREATE TABLE IF NOT EXISTS logs_acesso (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  documento_id INTEGER NOT NULL REFERENCES documentos(id) ON DELETE CASCADE,
+  acao VARCHAR(50) NOT NULL,
+  resultado VARCHAR(20) NOT NULL,
+  data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ==============================
 -- NOTA

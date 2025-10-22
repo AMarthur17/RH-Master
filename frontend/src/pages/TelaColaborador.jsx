@@ -12,12 +12,16 @@ export default function TelaColaborador() {
   const [historico, setHistorico] = useState([]);
   const [status, setStatus] = useState("");
 
-  // Estado para edição de perfil
   const [editando, setEditando] = useState(false);
   const [nome, setNome] = useState(usuario?.nome || "");
   const [email, setEmail] = useState(usuario?.email || "");
   const [senha, setSenha] = useState("");
 
+  // Lista de documentos compartilhados
+  const [documentosCompartilhados, setDocumentosCompartilhados] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  // Função para buscar histórico de pontos
   const buscarHistorico = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -43,9 +47,33 @@ export default function TelaColaborador() {
     }
   };
 
+  // Função para buscar documentos compartilhados
+  const buscarDocumentosCompartilhados = async () => {
+    if (!usuarioId) return;
+    try {
+      setLoadingDocs(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:3000/documentos/compartilhados/${usuarioId}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      if (!res.ok) throw new Error("Erro ao buscar documentos compartilhados");
+      const data = await res.json();
+      setDocumentosCompartilhados(data);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao carregar documentos compartilhados.");
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
   useEffect(() => {
     if (!usuarioId) return navigate("/login");
     buscarHistorico();
+    buscarDocumentosCompartilhados();
   }, [usuarioId]);
 
   const baterPonto = async (tipo) => {
@@ -80,7 +108,6 @@ export default function TelaColaborador() {
     }
   };
 
-  // Edição de perfil do colaborador
   const editarPerfil = async (e) => {
     e.preventDefault();
 
@@ -88,7 +115,6 @@ export default function TelaColaborador() {
       const token = localStorage.getItem("token");
       const updateData = { nome, email };
 
-      // Só adiciona senha se foi preenchida
       if (senha.trim()) {
         updateData.senha = senha;
       }
@@ -113,7 +139,7 @@ export default function TelaColaborador() {
 
       alert("Perfil atualizado com sucesso!");
       setEditando(false);
-      setSenha(""); // Limpa o campo senha
+      setSenha("");
     } catch (err) {
       console.error(err);
       alert("Erro ao atualizar perfil.");
@@ -142,7 +168,7 @@ export default function TelaColaborador() {
           <p style={{ marginTop: "20px", fontWeight: "bold" }}>{status}</p>
         )}
 
-        {/* Histórico */}
+        {/* Histórico de pontos */}
         <h3 style={{ marginTop: "30px" }}>Histórico de Pontos:</h3>
         {historico.length === 0 ? (
           <p>Nenhum registro encontrado.</p>
@@ -165,6 +191,44 @@ export default function TelaColaborador() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* Documentos compartilhados */}
+        <h3 style={{ marginTop: "30px" }}>Documentos Compartilhados:</h3>
+        {loadingDocs ? (
+          <p>Carregando documentos...</p>
+        ) : documentosCompartilhados.length === 0 ? (
+          <p>Nenhum documento compartilhado.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {documentosCompartilhados.map((doc) => (
+              <li
+                key={doc.id}
+                style={{
+                  marginBottom: "10px",
+                  padding: "10px",
+                  background: "#222a",
+                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ color: "#fff" }}>
+                  {doc.nome_arquivo} (de {doc.dono})
+                </span>
+                <a
+                  href={doc.url_arquivo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-gradient"
+                  style={{ fontSize: "12px", padding: "6px 12px" }}
+                >
+                  Abrir
+                </a>
+              </li>
+            ))}
+          </ul>
         )}
 
         {/* Botão editar perfil */}
