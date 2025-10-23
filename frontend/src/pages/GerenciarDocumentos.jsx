@@ -130,16 +130,22 @@ export default function GerenciarDocumentos() {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:3000/documentos/${docId}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
       });
 
-      if (!res.ok) throw new Error("Erro ao remover documento");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Erro ao remover documento");
+      }
 
       alert("Documento removido com sucesso!");
       buscarDocumentos();
     } catch (err) {
       console.error(err);
-      alert("Erro ao remover documento.");
+      alert(err.message || "Erro ao remover documento.");
     }
   };
 

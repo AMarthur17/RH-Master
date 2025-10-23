@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import documentosRouter from "./routes/documentos.js";
 import beneficiosRouter from "./routes/beneficios.js";
+import logsRouter from "./routes/logs.js";
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use("/uploads", express.static(process.env.UPLOADS_DIR || "uploads"));
 
 // Rotas principais
 app.use("/", routes);
+
+// Rotas de logs (performance, alerts)
+app.use('/logs', logsRouter);
 
 // Rotas de documentos
 app.use("/documentos", documentosRouter);

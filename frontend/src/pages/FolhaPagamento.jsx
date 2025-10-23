@@ -184,7 +184,7 @@ export default function FolhaPagamento() {
                     <tr>
                       <th>Nome</th>
                       <th>Email</th>
-                      <th>Pontos</th>
+                     {/* <th>Pontos</th> */}
                       <th>Salário Base</th>
                       <th>Benefícios</th>
                       <th>Descontos</th>
@@ -196,7 +196,7 @@ export default function FolhaPagamento() {
                       <tr key={f.usuario.id} style={{ background: "#eee" }}>
                         <td>{f.usuario.nome}</td>
                         <td>{f.usuario.email}</td>
-                        <td>{f.usuario.pontos.length}</td>
+                       {/* <td>{f.usuario.pontos.length}</td>*/}
                         <td>R$ {f.salarioBase}</td>
                         <td>R$ {f.beneficios}</td>
                         <td>R$ {f.descontos}</td>

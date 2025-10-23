@@ -10,6 +10,9 @@ export default function TelaAdministrador() {
 
   const [nomeBusca, setNomeBusca] = useState("");
   const [usuarios, setUsuarios] = useState([]);
+  const [gerandoRelatorio, setGerandoRelatorio] = useState(false);
+  const [tipoRelatorio, setTipoRelatorio] = useState('lista');
+  const [formatoRelatorio, setFormatoRelatorio] = useState('pdf');
 
   if (!admin) {
     return (
@@ -26,6 +29,7 @@ export default function TelaAdministrador() {
   }
 
   const buscarUsuarios = async () => {
+    const start = performance.now();
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -48,9 +52,99 @@ export default function TelaAdministrador() {
       );
 
       setUsuarios(usuariosComPontos);
+      // Medição de tempo de resposta
+      const end = performance.now();
+      const tempo = end - start;
+      // Envia log de performance
+      fetch('http://localhost:3000/logs/performance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tela: 'TelaAdministrador',
+          acao: 'buscarUsuarios',
+          tempoRespostaMs: tempo,
+          usuario: admin?.id,
+          timestamp: new Date().toISOString()
+        })
+      });
     } catch (err) {
       console.error(err);
       alert("Erro ao buscar usuários.");
+    }
+  };
+
+  const gerarRelatorio = async () => {
+    const start = performance.now();
+    try {
+      setGerandoRelatorio(true);
+      const token = localStorage.getItem("token");
+      let endpoint = '';
+      
+      switch(tipoRelatorio) {
+        case 'lista':
+          endpoint = `http://localhost:3000/relatorios/funcionarios`;
+          break;
+        case 'presenca':
+          endpoint = `http://localhost:3000/relatorios/presenca`;
+          break;
+        case 'beneficios':
+          endpoint = `http://localhost:3000/relatorios/beneficios`;
+          break;
+        default:
+          throw new Error("Tipo de relatório inválido");
+      }
+
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${endpoint}?empresa=${admin.empresa}&formato=${formatoRelatorio}`, { headers });
+
+      if (!res.ok) {
+        // Try to extract server message
+        let errMsg = 'Erro ao gerar relatório.';
+        try {
+          const j = await res.json();
+          if (j?.error) errMsg = j.error;
+        } catch (e) {
+          // not json
+        }
+        if (res.status === 401) {
+          alert('Sessão inválida. Faça login novamente.');
+          navigate('/login');
+          return;
+        }
+        throw new Error(errMsg);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${tipoRelatorio}-${new Date().toISOString().split('T')[0]}.${formatoRelatorio}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Medição de tempo de resposta
+      const end = performance.now();
+      const tempo = end - start;
+      // Envia log de performance
+      fetch('http://localhost:3000/logs/performance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tela: 'TelaAdministrador',
+          acao: 'gerarRelatorio',
+          tipoRelatorio,
+          tempoRespostaMs: tempo,
+          usuario: admin?.id,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao gerar relatório.");
+    } finally {
+      setGerandoRelatorio(false);
     }
   };
 
@@ -116,6 +210,52 @@ export default function TelaAdministrador() {
           >
             Gerar Folha de Pagamento
           </button>
+
+          {/* Seção de Relatórios */}
+          <div style={{ 
+            marginTop: 20, 
+            padding: 16, 
+            backgroundColor: '#333a', 
+            borderRadius: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12
+          }}>
+            <h3 style={{ margin: 0, color: '#fff' }}>Relatórios</h3>
+            
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <select 
+                value={tipoRelatorio}
+                onChange={(e) => setTipoRelatorio(e.target.value)}
+                style={{ flex: 1, padding: '8px', borderRadius: 4 }}
+              >
+                <option value="lista">Lista de Funcionários</option>
+                <option value="presenca">Registro de Presença</option>
+                <option value="beneficios">Relatório de Benefícios</option>
+              </select>
+
+              <select 
+                value={formatoRelatorio}
+                onChange={(e) => setFormatoRelatorio(e.target.value)}
+                style={{ width: '100px', padding: '8px', borderRadius: 4 }}
+              >
+                <option value="pdf">PDF</option>
+                <option value="xlsx">Excel</option>
+              </select>
+
+              <button
+                className="btn-gradient"
+                onClick={gerarRelatorio}
+                disabled={gerandoRelatorio}
+                style={{
+                  padding: '8px 16px',
+                  minWidth: '150px'
+                }}
+              >
+                {gerandoRelatorio ? 'Gerando...' : 'Gerar Relatório'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Tabela de usuários */}
