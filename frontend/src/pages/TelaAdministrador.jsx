@@ -32,24 +32,34 @@ export default function TelaAdministrador() {
     const start = performance.now();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:3000/usuario?nome=${nomeBusca}&empresa=${admin.empresa}`,
+      // Primeiro, obter relatório de presença (faltas no mês) para ordenar e marcar
+      const presRes = await fetch(
+        `http://localhost:3000/relatorios/presenca?empresa=${admin.empresa}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
-      if (!res.ok) throw new Error("Erro ao buscar usuários");
+      if (!presRes.ok) throw new Error("Erro ao buscar relatório de presença");
+      const presJson = await presRes.json();
+      const usersFromReport = presJson.data || [];
 
-      const data = await res.json();
-
+      // Para cada usuário, buscar pontos de hoje para exibir na tabela
       const usuariosComPontos = await Promise.all(
-        data.map(async (user) => {
+        usersFromReport.map(async (user) => {
           const pontosRes = await fetch(
             `http://localhost:3000/registro-ponto/${user.id}?hoje=true`,
             { headers: token ? { Authorization: `Bearer ${token}` } : {} }
           );
-          const pontos = await pontosRes.json();
+          const pontos = pontosRes.ok ? await pontosRes.json() : [];
           return { ...user, pontos };
         })
       );
+
+      // Ordenar: colocar primeiro quem tem 5 ou mais faltas, mantendo ordem por faltas desc
+      usuariosComPontos.sort((a, b) => {
+        const aFlag = (a.faltas || 0) >= 5 ? 0 : 1;
+        const bFlag = (b.faltas || 0) >= 5 ? 0 : 1;
+        if (aFlag !== bFlag) return aFlag - bFlag; // quem tiver falhas >=5 vem primeiro
+        return (b.faltas || 0) - (a.faltas || 0);
+      });
 
       setUsuarios(usuariosComPontos);
       // Medição de tempo de resposta
@@ -358,7 +368,17 @@ export default function TelaAdministrador() {
                 navigate("/historico-pontos", { state: { usuario: u } })
               }
             >
-              Histórico de Pontos
+              {/* botão fica vermelho quando faltas >= 5 */}
+              <span style={{
+                  display: 'inline-block',
+                  width: '100%',
+                  background: (u.faltas || 0) >= 5 ? '#d9534f' : undefined,
+                  color: (u.faltas || 0) >= 5 ? '#fff' : undefined,
+                  padding: '8px 0',
+                  textAlign: 'center'
+                }}>
+                Histórico de Pontos { (u.faltas || 0) >=5 ? `(${u.faltas} faltas)` : '' }
+              </span>
             </button>
           </td>
         </tr>
