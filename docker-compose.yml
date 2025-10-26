@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/init.sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   backend:
     build: ./backend
@@ -36,6 +36,18 @@ services:
       - ./backend:/app:cached
       # ⚠ Não mapear node_modules do host
     command: sh -c "npm install && npm run dev"
+
+  db-init:
+    image: postgres:15
+    container_name: rh_master_db_init
+    depends_on:
+      - db
+    # run a hosted script (ensures proper LF endings and avoids compose multiline parsing problems)
+    entrypoint: ["/bin/sh","/docker-entrypoint-initdb.d/init-db.sh"]
+    volumes:
+      - ./db/init.sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    restart: "no"
 
   frontend:
     build: ./frontend

@@ -1,4 +1,3 @@
-@ -1,163 +0,0 @@
 -- RH-Master: init.sql
 -- Arquivo limpo e consistente para uso acadêmico / desenvolvimento.
 
