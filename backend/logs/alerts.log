@@ -14,3 +14,7 @@
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2448,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.549Z","alert":"TEMPO_ALTO","threshold":2000}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2316,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.561Z","alert":"TEMPO_ALTO","threshold":2000}
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2299,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.572Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":3339.800000011921,"usuario":null,"timestamp":"2025-10-27T20:35:35.161Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2085.7000000476837,"usuario":null,"timestamp":"2025-10-27T20:47:11.923Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2526.899999976158,"usuario":null,"timestamp":"2025-10-27T20:55:46.010Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2153.900000035763,"usuario":null,"timestamp":"2025-10-27T21:17:34.190Z","alert":"TEMPO_ALTO","threshold":2000}
