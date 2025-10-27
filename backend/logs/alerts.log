@@ -1,0 +1,16 @@
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2048,"usuario":"simulacao","timestamp":"2025-10-23T17:34:23.956Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2216,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.141Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2795,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.163Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2442,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.216Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2318,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.267Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2703,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.297Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2658,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.310Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2410,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.340Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2037,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.372Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2530,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.435Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2438,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.447Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2697,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.486Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2191,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.507Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2448,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.549Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":2316,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.561Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":null,"tempoRespostaMs":2299,"usuario":"simulacao","timestamp":"2025-10-23T17:34:24.572Z","alert":"TEMPO_ALTO","threshold":2000}
