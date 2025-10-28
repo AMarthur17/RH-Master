@@ -132,7 +132,7 @@ export default function GerenciarDocumentos() {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
       });
 
@@ -149,23 +149,22 @@ export default function GerenciarDocumentos() {
     }
   };
 
-  // Função para alternar permissão de visualização
-  // Função para alternar permissão de visualização
-  const handleTogglePermissao = async (docId, podeVer) => {
+  // 🔄 Função para alternar permissão de visualização (toggle)
+  const handleTogglePermissao = async (docId, novoValor) => {
     try {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
         `http://localhost:3000/documentos/${docId}/permissao`,
         {
-          method: "POST", // ✅ corrigido de PUT para POST
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            usuario_id: usuario.id, // ✅ quem é o colaborador dono do documento
-            pode_visualizar: podeVer,
+            usuario_id: usuario.id,
+            pode_visualizar: novoValor,
             pode_editar: false,
             pode_excluir: false,
           }),
@@ -174,13 +173,18 @@ export default function GerenciarDocumentos() {
 
       if (!res.ok) throw new Error("Erro ao atualizar permissão");
 
-      alert("Permissão atualizada com sucesso!");
-      buscarDocumentos();
+      // ✅ Atualiza o estado local sem precisar refazer o fetch
+      setDocumentos((prevDocs) =>
+        prevDocs.map((d) =>
+          d.id === docId ? { ...d, pode_visualizar: novoValor } : d
+        )
+      );
     } catch (err) {
       console.error(err);
       alert("Erro ao alterar permissão do documento.");
     }
   };
+
   // Função para obter o tipo do arquivo
   const getFileTypeLabel = (fileName) => {
     const ext = fileName.split(".").pop().toLowerCase();
