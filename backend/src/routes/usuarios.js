@@ -179,6 +179,70 @@ router.get(
   }
 );
 
+// Retorna contagem de faltas no mês corrente para todos os usuários de uma empresa
+// Definição: dias úteis (segunda a sexta) do mês corrente. Se o usuário não tiver nenhum registro
+// naquele dia (qualquer tipo), conta como falta.
+router.get(
+  "/faltas-mes",
+  autenticar,
+  permitir(["admin", "administrador"]),
+  async (req, res) => {
+    try {
+      const { empresa } = req.query;
+
+      // Buscar usuários da empresa
+      let usersQuery = "SELECT id, nome, email FROM usuario WHERE 1=1";
+      const values = [];
+      if (empresa) {
+        values.push(empresa);
+        usersQuery += ` AND empresa = $${values.length}`;
+      }
+      const usersResult = await db.query(usersQuery, values);
+      const users = usersResult.rows;
+
+      // Calcular dias úteis do mês corrente (segunda=1 .. sexta=5)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0-indexed
+
+      const workingDates = [];
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
+        const day = d.getDay();
+        // In JS: Sunday=0, Monday=1, ..., Saturday=6. We want Mon-Fri
+        if (day >= 1 && day <= 5) {
+          // store as ISO date string YYYY-MM-DD for easy compare
+          workingDates.push(d.toISOString().split('T')[0]);
+        }
+      }
+
+      const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+
+      // Para cada usuário, contar dias do mês com pelo menos um registro
+      const results = await Promise.all(users.map(async (u) => {
+        const rp = await db.query(
+          `SELECT DISTINCT (data_hora::date) AS dia FROM registro_ponto WHERE usuario_id = $1 AND data_hora::date BETWEEN $2 AND $3`,
+          [u.id, startDate, endDate]
+        );
+
+        const diasComRegistro = rp.rows.map(r => r.dia && r.dia.toISOString ? r.dia.toISOString().split('T')[0] : String(r.dia));
+        // contar quantos dias úteis não possuem registro
+        const presentes = workingDates.filter(d => diasComRegistro.includes(d)).length;
+        const faltas = Math.max(0, workingDates.length - presentes);
+
+        return { id: u.id, nome: u.nome, email: u.email, faltasMes: faltas };
+      }));
+
+      res.json(results);
+    } catch (err) {
+      console.error('Erro ao calcular faltas do mês:', err);
+      res.status(500).json({ error: 'Erro ao calcular faltas do mês' });
+    }
+  }
+);
+
 // Atualizar usuário e registrar histórico
 router.put("/:id", autenticar, async (req, res) => {
   try {

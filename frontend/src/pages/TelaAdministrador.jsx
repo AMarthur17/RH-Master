@@ -13,6 +13,8 @@ export default function TelaAdministrador() {
   const [gerandoRelatorio, setGerandoRelatorio] = useState(false);
   const [tipoRelatorio, setTipoRelatorio] = useState('lista');
   const [formatoRelatorio, setFormatoRelatorio] = useState('pdf');
+  // Threshold for marking irregular users (>= this number of faltas in current month)
+  const FALTAS_THRESHOLD = 5;
 
   if (!admin) {
     return (
@@ -40,16 +42,43 @@ export default function TelaAdministrador() {
 
       const data = await res.json();
 
+      // Buscar contagens de faltas no backend em um único endpoint
+      const faltasRes = await fetch(`http://localhost:3000/usuario/faltas-mes?empresa=${encodeURIComponent(admin.empresa)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      let faltasData = [];
+      if (faltasRes.ok) {
+        faltasData = await faltasRes.json();
+      } else {
+        console.warn('Não foi possível obter faltas do backend, fallback para cálculo local.');
+      }
+
+      // Map para acesso rápido: id -> faltasMes
+      const faltasMap = new Map();
+      faltasData.forEach(f => faltasMap.set(f.id, f.faltasMes));
+
       const usuariosComPontos = await Promise.all(
         data.map(async (user) => {
+          // Buscar somente pontos de hoje para exibir na tabela
           const pontosRes = await fetch(
             `http://localhost:3000/registro-ponto/${user.id}?hoje=true`,
             { headers: token ? { Authorization: `Bearer ${token}` } : {} }
           );
-          const pontos = await pontosRes.json();
-          return { ...user, pontos };
+          const pontos = pontosRes.ok ? await pontosRes.json() : [];
+
+          const faltasMes = faltasMap.has(user.id) ? faltasMap.get(user.id) : 0;
+          return { ...user, pontos, faltasMes };
         })
       );
+
+      // Ordenar: primeiro usuários com faltas >= threshold no mês, depois por número de faltas decrescente, depois por nome
+      usuariosComPontos.sort((a, b) => {
+        const aHigh = (a.faltasMes || 0) >= FALTAS_THRESHOLD ? 1 : 0;
+        const bHigh = (b.faltasMes || 0) >= FALTAS_THRESHOLD ? 1 : 0;
+        if (aHigh !== bHigh) return bHigh - aHigh; // usuários com faltas >= threshold primeiro
+        if ((b.faltasMes || 0) !== (a.faltasMes || 0)) return (b.faltasMes || 0) - (a.faltasMes || 0);
+        return a.nome.localeCompare(b.nome);
+      });
 
       setUsuarios(usuariosComPontos);
       // Medição de tempo de resposta
@@ -275,7 +304,8 @@ export default function TelaAdministrador() {
         <th>Nome</th>
         <th>Email</th>
         <th>Empresa</th>
-        <th>Pontos Hoje</th>
+          <th>Pontos Hoje</th>
+          <th>Faltas Mês</th>
   <th>Documentos</th>
   <th>Benefícios</th>
         <th>Ações</th>
@@ -294,6 +324,7 @@ export default function TelaAdministrador() {
                   .join(", ")
               : "Nenhum ponto"}
           </td>
+          <td style={{ textAlign: 'center', backgroundColor: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '#c62828' : undefined, color: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '#fff' : undefined, fontWeight: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '700' : undefined }}>{u.faltasMes || 0}</td>
 
           {/* Documentos */}
           <td className="td-documentos">
@@ -353,12 +384,16 @@ export default function TelaAdministrador() {
                 borderRadius: 0,
                 fontSize: 14,
                 padding: "8px 0",
+                backgroundColor: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '#c62828' : undefined,
+                color: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '#fff' : undefined,
+                border: (u.faltasMes || 0) >= FALTAS_THRESHOLD ? '1px solid #b71c1c' : undefined
               }}
               onClick={() =>
                 navigate("/historico-pontos", { state: { usuario: u } })
               }
+              title={(u.faltasMes || 0) >= FALTAS_THRESHOLD ? `Faltas pendentes: ${u.faltasMes}` : 'Histórico de Pontos'}
             >
-              Histórico de Pontos
+              {(u.faltasMes || 0) >= FALTAS_THRESHOLD ? `Faltas pendentes (${u.faltasMes})` : 'Histórico de Pontos'}
             </button>
           </td>
         </tr>
