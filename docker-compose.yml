@@ -46,7 +46,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://backend:3000   # usa o nome do serviço do docker
+      VITE_API_URL: http://localhost:3000
+    # usa o nome do serviço do docker
     volumes:
       - ./frontend:/app
     command: sh -c "npm install && npm run dev"

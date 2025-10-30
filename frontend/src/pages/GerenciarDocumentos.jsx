@@ -149,7 +149,7 @@ export default function GerenciarDocumentos() {
     }
   };
 
-  // 🔄 Função para alternar permissão de visualização (toggle)
+  // Função para alternar permissão de visualização (toggle)
   const handleTogglePermissao = async (docId, novoValor) => {
     try {
       const token = localStorage.getItem("token");
@@ -163,7 +163,7 @@ export default function GerenciarDocumentos() {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            usuario_id: usuario.id,
+            usuario_id: usuario.id, // <- aqui é o ID do colaborador
             pode_visualizar: novoValor,
             pode_editar: false,
             pode_excluir: false,
@@ -173,7 +173,6 @@ export default function GerenciarDocumentos() {
 
       if (!res.ok) throw new Error("Erro ao atualizar permissão");
 
-      // ✅ Atualiza o estado local sem precisar refazer o fetch
       setDocumentos((prevDocs) =>
         prevDocs.map((d) =>
           d.id === docId ? { ...d, pode_visualizar: novoValor } : d
@@ -185,7 +184,48 @@ export default function GerenciarDocumentos() {
     }
   };
 
-  // Função para obter o tipo do arquivo
+  // ===============================
+  // NOVA FUNÇÃO: download seguro
+  // ===============================
+  const handleDownloadSeguro = async (docId) => {
+    const senha = prompt("Digite sua senha para download seguro:");
+    if (!senha) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:3000/documentos/${docId}/download`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ senha }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Erro no download seguro");
+      }
+
+      const blob = await res.blob();
+      const doc = documentos.find((d) => d.id === docId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.nome_arquivo;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Falha no download seguro");
+    }
+  };
+
   const getFileTypeLabel = (fileName) => {
     const ext = fileName.split(".").pop().toLowerCase();
     if (ext === "pdf") return "PDF";
@@ -377,20 +417,20 @@ export default function GerenciarDocumentos() {
                   key={doc.id}
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: "column",
                     background: "#222a",
                     borderRadius: 8,
                     padding: 16,
                     boxShadow: "0 1px 4px #0002",
                   }}
                 >
+                  {/* Nome e tipo do arquivo */}
                   <div
                     style={{
-                      flex: 1,
                       display: "flex",
                       alignItems: "center",
                       gap: 12,
+                      marginBottom: 12,
                     }}
                   >
                     <span
@@ -418,8 +458,8 @@ export default function GerenciarDocumentos() {
                     </span>
                   </div>
 
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {/* NOVO BOTÃO DE PERMISSÃO */}
+                  {/* Botões do documento */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     <button
                       className="btn-gradient"
                       style={{
@@ -438,7 +478,19 @@ export default function GerenciarDocumentos() {
                         : "Colaborador não pode ver"}
                     </button>
 
-                    {/* BOTÕES EXISTENTES */}
+                    <button
+                      className="btn-gradient"
+                      style={{
+                        fontSize: 14,
+                        padding: "8px 16px",
+                        background:
+                          "linear-gradient(135deg, #ffb74d 0%, #ff9800 100%)",
+                      }}
+                      onClick={() => handleDownloadSeguro(doc.id)}
+                    >
+                      Download Seguro
+                    </button>
+
                     <button
                       className="btn-gradient"
                       style={{
@@ -451,6 +503,7 @@ export default function GerenciarDocumentos() {
                     >
                       Abrir
                     </button>
+
                     <button
                       className="btn-gradient"
                       style={{
