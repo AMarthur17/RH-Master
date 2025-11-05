@@ -20,6 +20,9 @@ export default function TelaColaborador() {
   const [documentosCompartilhados, setDocumentosCompartilhados] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
 
+  // Solicitações de férias/licença
+  // Solicitações are handled on a separate page now
+
   // Estados para o download seguro inline
   const [docSelecionado, setDocSelecionado] = useState(null);
   const [senhaDownload, setSenhaDownload] = useState("");
@@ -83,6 +86,8 @@ export default function TelaColaborador() {
     buscarHistorico();
     buscarDocumentosCompartilhados();
   }, [usuarioId]);
+
+  // solicitacoes logic moved to a dedicated page
 
   // ==========================
   // Funções principais
@@ -152,6 +157,8 @@ export default function TelaColaborador() {
       alert("Erro ao atualizar perfil.");
     }
   };
+
+  // Solicitação handling moved to SolicitacoesColaborador.jsx
 
   // ==========================
   // Download Seguro Inline
@@ -413,6 +420,18 @@ export default function TelaColaborador() {
             </button>
           </form>
         )}
+
+        {/* Button to go to the dedicated solicitations page */}
+        <div style={{ marginTop: 30 }}>
+          <h3>Férias e Licenças</h3>
+          <button
+            className="btn-gradient"
+            onClick={() => navigate('/solicitacoes', { state: { usuario } })}
+            style={{ marginTop: 8 }}
+          >
+            Ir para Solicitações
+          </button>
+        </div>
 
         <button
           style={{ marginTop: "20px" }}

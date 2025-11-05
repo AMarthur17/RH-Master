@@ -13,6 +13,7 @@ export default function TelaAdministrador() {
   const [gerandoRelatorio, setGerandoRelatorio] = useState(false);
   const [tipoRelatorio, setTipoRelatorio] = useState('lista');
   const [formatoRelatorio, setFormatoRelatorio] = useState('pdf');
+  // Pending solicitations are handled on a dedicated page now
   // Threshold for marking irregular users (>= this number of faltas in current month)
   const FALTAS_THRESHOLD = 5;
 
@@ -102,6 +103,8 @@ export default function TelaAdministrador() {
     }
   };
 
+  // Pending solicitations logic moved to SolicitacoesPendentesAdministrador.jsx
+
   const gerarRelatorio = async () => {
     const start = performance.now();
     try {
@@ -132,7 +135,7 @@ export default function TelaAdministrador() {
         try {
           const j = await res.json();
           if (j?.error) errMsg = j.error;
-        } catch (e) {
+        } catch {
           // not json
         }
         if (res.status === 401) {
@@ -284,6 +287,13 @@ export default function TelaAdministrador() {
                 {gerandoRelatorio ? 'Gerando...' : 'Gerar Relatório'}
               </button>
             </div>
+          </div>
+        </div>
+        {/* Button to go to the dedicated admin solicitations page */}
+        <div style={{ marginTop: 20, padding: 16, backgroundColor: '#233', borderRadius: 8 }}>
+          <h3 style={{ margin: 0, color: '#fff' }}>Gestão de Férias e Licenças</h3>
+          <div style={{ marginTop: 12 }}>
+            <button className="btn-gradient" onClick={() => navigate('/solicitacoes-pendentes', { state: { usuario: admin } })}>Ir para Solicitações Pendentes</button>
           </div>
         </div>
 

@@ -176,3 +176,13 @@
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":175,"usuario":1,"timestamp":"2025-10-30T13:51:37.756Z"}
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"presenca","tempoRespostaMs":88,"usuario":1,"timestamp":"2025-10-30T13:51:48.237Z"}
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"beneficios","tempoRespostaMs":152,"usuario":1,"timestamp":"2025-10-30T13:52:03.612Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":37,"usuario":1,"timestamp":"2025-11-05T17:17:03.663Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":28.299999999813735,"usuario":1,"timestamp":"2025-11-05T17:17:12.481Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":24,"usuario":1,"timestamp":"2025-11-05T17:17:13.504Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":33.89999999944121,"usuario":1,"timestamp":"2025-11-05T17:21:16.283Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":42.5,"usuario":1,"timestamp":"2025-11-05T17:39:30.515Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":95.79999999981374,"usuario":1,"timestamp":"2025-11-05T17:57:40.291Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":27.799999999813735,"usuario":1,"timestamp":"2025-11-05T17:59:13.669Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":98.5,"usuario":1,"timestamp":"2025-11-05T18:19:25.608Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":38.700000000186265,"usuario":1,"timestamp":"2025-11-05T18:20:24.215Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":41.09999999962747,"usuario":1,"timestamp":"2025-11-05T18:32:53.952Z"}

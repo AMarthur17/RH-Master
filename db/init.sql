@@ -128,6 +128,25 @@ CREATE INDEX IF NOT EXISTS idx_usuario_email
 CREATE INDEX IF NOT EXISTS idx_registro_ponto_usuario_data 
   ON registro_ponto(usuario_id, data_hora);
 
+-- ==============================
+-- SOLICITAÇÕES DE FÉRIAS / LICENÇAS
+-- ==============================
+CREATE TABLE IF NOT EXISTS solicitacoes_licenca (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  tipo VARCHAR(50) NOT NULL, -- 'ferias' ou 'licenca'
+  data_inicio DATE NOT NULL,
+  data_fim DATE NOT NULL,
+  motivo TEXT,
+  status VARCHAR(20) DEFAULT 'pendente', -- pendente, aprovado, recusado
+  aprovado_por INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_usuario ON solicitacoes_licenca(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_status ON solicitacoes_licenca(status);
+
 CREATE INDEX IF NOT EXISTS idx_documentos_usuario 
   ON documentos(usuario_id);
 

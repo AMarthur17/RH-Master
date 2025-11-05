@@ -7,6 +7,8 @@ import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
 import TelaColaborador from "./pages/TelaColaborador";
 import TelaAdministrador from "./pages/TelaAdministrador";
+import SolicitacoesPendentesAdministrador from "./pages/SolicitacoesPendentesAdministrador";
+import SolicitacoesColaborador from "./pages/SolicitacoesColaborador";
 import EditarPerfil from "./pages/EditarPerfil";
 import GerenciarDocumentos from "./pages/GerenciarDocumentos";
 import GerenciarBeneficios from "./pages/GerenciarBeneficios";
@@ -26,6 +28,8 @@ export default function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/colaborador" element={<TelaColaborador />} />
+  <Route path="/solicitacoes" element={<SolicitacoesColaborador />} />
+  <Route path="/solicitacoes-pendentes" element={<SolicitacoesPendentesAdministrador />} />
         <Route path="/administrador" element={<TelaAdministrador />} />
         <Route path="/editar-perfil" element={<EditarPerfil />} />
         <Route path="/gerenciar-documentos" element={<GerenciarDocumentos />} />
