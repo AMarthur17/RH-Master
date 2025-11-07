@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS usuario (
   nome VARCHAR(100) NOT NULL,
   cpf VARCHAR(50) UNIQUE NOT NULL,
   empresa VARCHAR(100),
+  salario NUMERIC(12,2) DEFAULT 0,
   idade INTEGER,
   email VARCHAR(100) UNIQUE NOT NULL,
   senha VARCHAR(200) NOT NULL,
@@ -142,6 +143,21 @@ CREATE TABLE IF NOT EXISTS solicitacoes_licenca (
   aprovado_por INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================
+-- TABELA DE AUDITORIA DE CÁLCULOS DE FÉRIAS
+-- ==============================
+CREATE TABLE IF NOT EXISTS ferias_calculos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  meses_trabalhados INTEGER NOT NULL,
+  dias_ferias INTEGER NOT NULL,
+  valor_ferias NUMERIC(12,2) NOT NULL,
+  um_terco NUMERIC(12,2) NOT NULL,
+  valor_total NUMERIC(12,2) NOT NULL,
+  salario_referencia NUMERIC(12,2) DEFAULT 0,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_solicitacoes_usuario ON solicitacoes_licenca(usuario_id);

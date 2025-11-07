@@ -9,6 +9,7 @@ export default function SolicitacoesPendentesAdministrador() {
   const admin = location.state?.usuario;
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([]);
   const [decidindoId, setDecidindoId] = useState(null);
+  const [calculosFerias, setCalculosFerias] = useState({});
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -16,6 +17,35 @@ export default function SolicitacoesPendentesAdministrador() {
     if (!admin) return navigate("/login");
     buscarSolicitacoesPendentes();
   }, [admin]);
+
+  const buscarCalculoFerias = async (solicitacao) => {
+    if (solicitacao.tipo !== "ferias") return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/ferias/calcular`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ 
+          funcionarioId: solicitacao.usuario_id,
+          mesesTrabalhados: 12 // Por padrão, considera período completo
+        }),
+      });
+
+      if (!res.ok) return;
+
+      const dados = await res.json();
+      setCalculosFerias(prev => ({
+        ...prev,
+        [solicitacao.id]: dados
+      }));
+    } catch (err) {
+      console.error("Erro ao calcular férias:", err);
+    }
+  };
 
   const buscarSolicitacoesPendentes = async () => {
     try {
@@ -26,6 +56,13 @@ export default function SolicitacoesPendentesAdministrador() {
       if (!res.ok) throw new Error("Erro ao buscar solicitações pendentes");
       const data = await res.json();
       setSolicitacoesPendentes(data);
+      
+      // Buscar cálculo de férias para cada solicitação de férias
+      data.forEach(solicitacao => {
+        if (solicitacao.tipo === "ferias") {
+          buscarCalculoFerias(solicitacao);
+        }
+      });
     } catch (err) {
       console.error(err);
       alert("Erro ao carregar solicitações pendentes.");
@@ -78,9 +115,45 @@ export default function SolicitacoesPendentesAdministrador() {
                   <div><strong>{s.nome}</strong> ({s.email})</div>
                   <div>{s.tipo} — {s.data_inicio} a {s.data_fim}</div>
                   {s.motivo && <div>Motivo: {s.motivo}</div>}
+                  
+                  {s.tipo === "ferias" && calculosFerias[s.id] && (
+                    <div style={{ 
+                      background: "#1a1a1a", 
+                      padding: "8px", 
+                      borderRadius: "4px",
+                      marginTop: "8px",
+                      marginBottom: "8px"
+                    }}>
+                      <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "4px" }}>
+                        Cálculo de Férias:
+                      </div>
+                      <div>Dias: {calculosFerias[s.id].diasFerias}</div>
+                      <div>Valor: R$ {calculosFerias[s.id].valorFerias.toFixed(2)}</div>
+                      <div>1/3: R$ {calculosFerias[s.id].umTercoFerias.toFixed(2)}</div>
+                      <div style={{ marginTop: "4px", fontWeight: "bold" }}>
+                        Total: R$ {calculosFerias[s.id].valorTotal.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    <button className="btn-gradient" onClick={() => decidirSolicitacao(s.id, 'aprovar')} disabled={decidindoId === s.id} style={{ background: '#4caf50' }}>{decidindoId === s.id ? 'Processando...' : 'Aprovar'}</button>
-                    <button className="btn-gradient" onClick={() => decidirSolicitacao(s.id, 'recusar')} disabled={decidindoId === s.id} style={{ background: '#c62828' }}>{decidindoId === s.id ? 'Processando...' : 'Recusar'}</button>
+                    <button 
+                      className="btn-gradient" 
+                      onClick={() => decidirSolicitacao(s.id, 'aprovar')} 
+                      disabled={decidindoId === s.id || (s.tipo === "ferias" && !calculosFerias[s.id])} 
+                      style={{ background: '#4caf50' }}
+                    >
+                      {decidindoId === s.id ? 'Processando...' : 
+                       (s.tipo === "ferias" && !calculosFerias[s.id] ? 'Calculando...' : 'Aprovar')}
+                    </button>
+                    <button 
+                      className="btn-gradient" 
+                      onClick={() => decidirSolicitacao(s.id, 'recusar')} 
+                      disabled={decidindoId === s.id} 
+                      style={{ background: '#c62828' }}
+                    >
+                      {decidindoId === s.id ? 'Processando...' : 'Recusar'}
+                    </button>
                   </div>
                   <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Enviado: {new Date(s.criado_em).toLocaleString()}</div>
                 </li>

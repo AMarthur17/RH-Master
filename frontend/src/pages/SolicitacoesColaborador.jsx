@@ -15,6 +15,8 @@ export default function SolicitacoesColaborador() {
   const [dataFim, setDataFim] = useState("");
   const [motivoSolicitacao, setMotivoSolicitacao] = useState("");
   const [enviandoSolicitacao, setEnviandoSolicitacao] = useState(false);
+  const [calculoFerias, setCalculoFerias] = useState(null);
+  const [calculandoFerias, setCalculandoFerias] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -38,6 +40,48 @@ export default function SolicitacoesColaborador() {
       alert("Erro ao carregar solicitações.");
     }
   };
+
+  const calcularFerias = async () => {
+    if (!dataInicio || !dataFim) return;
+    
+    try {
+      setCalculandoFerias(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/ferias/calcular`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ 
+          funcionarioId: usuarioId,
+          mesesTrabalhados: 12 // Por padrão, considera período completo
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Erro ao calcular férias:", err);
+        return;
+      }
+
+      const dados = await res.json();
+      setCalculoFerias(dados);
+    } catch (err) {
+      console.error("Erro ao calcular férias:", err);
+    } finally {
+      setCalculandoFerias(false);
+    }
+  };
+
+  // Calcular férias quando as datas são alteradas
+  useEffect(() => {
+    if (tipoSolicitacao === "ferias") {
+      calcularFerias();
+    } else {
+      setCalculoFerias(null);
+    }
+  }, [dataInicio, dataFim, tipoSolicitacao]);
 
   const enviarSolicitacao = async (e) => {
     e && e.preventDefault();
@@ -94,8 +138,36 @@ export default function SolicitacoesColaborador() {
               <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} required />
             </div>
             <textarea placeholder="Motivo (opcional)" value={motivoSolicitacao} onChange={(e) => setMotivoSolicitacao(e.target.value)} />
+            
+            {tipoSolicitacao === "ferias" && calculoFerias && (
+              <div style={{ 
+                background: "#1a1a1a", 
+                padding: "12px", 
+                borderRadius: "6px",
+                marginBottom: "12px" 
+              }}>
+                <h4 style={{ marginBottom: "8px" }}>Cálculo de Férias:</h4>
+                <div>Dias de Férias: {calculoFerias.diasFerias}</div>
+                <div>Valor das Férias: R$ {calculoFerias.valorFerias.toFixed(2)}</div>
+                <div>1/3 de Férias: R$ {calculoFerias.umTercoFerias.toFixed(2)}</div>
+                <div style={{ 
+                  marginTop: "8px", 
+                  fontWeight: "bold" 
+                }}>
+                  Valor Total: R$ {calculoFerias.valorTotal.toFixed(2)}
+                </div>
+              </div>
+            )}
+
             <div>
-              <button className="btn-gradient" type="submit" disabled={enviandoSolicitacao}>{enviandoSolicitacao ? 'Enviando...' : 'Enviar Solicitação'}</button>
+              <button 
+                className="btn-gradient" 
+                type="submit" 
+                disabled={enviandoSolicitacao || (tipoSolicitacao === "ferias" && calculandoFerias)}
+              >
+                {enviandoSolicitacao ? 'Enviando...' : 
+                 (calculandoFerias ? 'Calculando Férias...' : 'Enviar Solicitação')}
+              </button>
             </div>
           </form>
 
