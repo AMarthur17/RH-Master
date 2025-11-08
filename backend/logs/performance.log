@@ -186,3 +186,12 @@
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":98.5,"usuario":1,"timestamp":"2025-11-05T18:19:25.608Z"}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":38.700000000186265,"usuario":1,"timestamp":"2025-11-05T18:20:24.215Z"}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":41.09999999962747,"usuario":1,"timestamp":"2025-11-05T18:32:53.952Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":38,"usuario":1,"timestamp":"2025-11-08T20:03:57.722Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"beneficios","tempoRespostaMs":131,"usuario":1,"timestamp":"2025-11-08T20:04:06.883Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"presenca","tempoRespostaMs":26,"usuario":1,"timestamp":"2025-11-08T20:04:10.664Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":46,"usuario":1,"timestamp":"2025-11-08T20:04:16.383Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":41,"usuario":1,"timestamp":"2025-11-08T20:04:30.375Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":110,"usuario":1,"timestamp":"2025-11-08T20:04:51.514Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":54,"usuario":1,"timestamp":"2025-11-08T20:05:01.265Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":253,"usuario":1,"timestamp":"2025-11-08T20:05:04.872Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":296,"usuario":1,"timestamp":"2025-11-08T20:05:28.489Z"}

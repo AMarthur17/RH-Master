@@ -6,6 +6,7 @@ import relatoriosRoutes from "./relatorios.js";
 import healthRoutes from "./health.js";
 import solicitacoesRoutes from "./solicitacoes.js";
 import feriasRoutes from "./ferias.js";
+import schedulesRoutes from "./schedules.js";
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/relatorios", relatoriosRoutes);
 router.use("/health", healthRoutes);
 router.use("/solicitacoes", solicitacoesRoutes);
 router.use("/ferias", feriasRoutes);
+router.use("/schedules", schedulesRoutes);
 
 export default router;

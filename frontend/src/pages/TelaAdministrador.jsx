@@ -286,6 +286,13 @@ export default function TelaAdministrador() {
               >
                 {gerandoRelatorio ? 'Gerando...' : 'Gerar Relatório'}
               </button>
+              <button
+                className="btn-gradient"
+                onClick={() => navigate('/agendar-relatorios', { state: { usuario: admin } })}
+                style={{ marginLeft: 8 }}
+              >
+                Agendar Relatórios
+              </button>
             </div>
           </div>
         </div>

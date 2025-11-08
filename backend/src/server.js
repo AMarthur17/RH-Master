@@ -8,6 +8,7 @@ import routes from "./routes/index.js";
 import documentosRouter from "./routes/documentos.js";
 import beneficiosRouter from "./routes/beneficios.js";
 import logsRouter from "./routes/logs.js";
+import reportScheduler from './services/reportScheduler.service.js';
 
 dotenv.config();
 
@@ -42,4 +43,10 @@ app.get("/teste", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  // iniciar scheduler após o servidor subir
+  try {
+    reportScheduler.start().catch(err => console.error('Erro ao iniciar scheduler', err));
+  } catch (err) {
+    console.error('Erro ao iniciar scheduler', err);
+  }
 });

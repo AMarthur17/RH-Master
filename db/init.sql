@@ -196,3 +196,31 @@ CREATE TABLE IF NOT EXISTS logs_acesso (
 -- Se o container Postgres/SQLite já tiver dados, este arquivo só será executado
 -- automaticamente na criação do volume.
 -- Para reaplicar em um DB existente, rode o SQL manualmente ou remova o volume (apaga dados).
+
+-- ==============================
+-- AGENDAMENTO DE RELATÓRIOS
+-- ==============================
+CREATE TABLE IF NOT EXISTS scheduled_reports (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(255),
+  report_type VARCHAR(100),
+  formato VARCHAR(20) DEFAULT 'pdf',
+  empresa VARCHAR(100),
+  cron_expr TEXT,
+  tipo_agendamento VARCHAR(50) DEFAULT 'recorrente', -- 'recorrente' | 'one-time' | 'first_business_day'
+  start_at TIMESTAMP, -- usado para agendamento one-time
+  emails TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ativo BOOLEAN DEFAULT TRUE,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_reports_empresa ON scheduled_reports(empresa);
+
+CREATE TABLE IF NOT EXISTS scheduled_report_logs (
+  id SERIAL PRIMARY KEY,
+  scheduled_report_id INTEGER REFERENCES scheduled_reports(id) ON DELETE CASCADE,
+  status VARCHAR(50), -- success, failed
+  message TEXT,
+  arquivo_caminho VARCHAR(1024),
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
