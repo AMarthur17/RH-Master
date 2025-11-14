@@ -10,6 +10,9 @@ import beneficiosRouter from "./routes/beneficios.js";
 import logsRouter from "./routes/logs.js";
 import reportScheduler from './services/reportScheduler.service.js';
 
+// Importar middleware de auditoria
+import { auditMiddleware } from "./middleware/audit.js";
+
 dotenv.config();
 
 const app = express();
@@ -17,6 +20,9 @@ const app = express();
 // ====== MIDDLEWARES ======
 app.use(cors());
 app.use(express.json());
+
+// Middleware de auditoria - captura automaticamente ações sensíveis
+app.use(auditMiddleware);
 
 // ====== SERVIR ARQUIVOS ESTÁTICOS ======
 const uploadsDir = process.env.UPLOADS_DIR || "uploads";
@@ -43,6 +49,7 @@ app.get("/teste", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`🔒 Sistema de auditoria ativado`);
   // iniciar scheduler após o servidor subir
   try {
     reportScheduler.start().catch(err => console.error('Erro ao iniciar scheduler', err));

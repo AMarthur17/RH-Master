@@ -195,3 +195,7 @@
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":54,"usuario":1,"timestamp":"2025-11-08T20:05:01.265Z"}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":253,"usuario":1,"timestamp":"2025-11-08T20:05:04.872Z"}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":296,"usuario":1,"timestamp":"2025-11-08T20:05:28.489Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":39,"usuario":1,"timestamp":"2025-11-14T14:45:06.328Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":34.20000000111759,"usuario":1,"timestamp":"2025-11-14T14:47:14.796Z"}
+{"tela":"FolhaPagamento","acao":"gerarFolha","tipoRelatorio":null,"tempoRespostaMs":755,"usuario":null,"timestamp":"2025-11-14T14:47:25.852Z"}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":1945,"usuario":null,"timestamp":"2025-11-14T14:47:30.000Z"}

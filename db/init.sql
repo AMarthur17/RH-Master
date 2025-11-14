@@ -224,3 +224,81 @@ CREATE TABLE IF NOT EXISTS scheduled_report_logs (
   arquivo_caminho VARCHAR(1024),
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ==============================
+-- LOGS DE AUDITORIA E SEGURANÇA
+-- ==============================
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  usuario_nome VARCHAR(100),
+  usuario_email VARCHAR(100),
+  acao VARCHAR(100) NOT NULL, -- tipo da ação (ex: 'LOGIN', 'LOGOUT', 'CRIAR_USUARIO', 'EDITAR_SALARIO')
+  categoria VARCHAR(50) NOT NULL, -- 'AUTENTICACAO', 'USUARIO', 'FOLHA', 'DOCUMENTO', 'RELATORIO', etc
+  descricao TEXT, -- descrição detalhada da ação
+  endpoint VARCHAR(255), -- rota acessada
+  metodo VARCHAR(10), -- GET, POST, PUT, DELETE
+  ip_address VARCHAR(45), -- suporta IPv4 e IPv6
+  user_agent TEXT,
+  resultado VARCHAR(20) DEFAULT 'SUCESSO', -- SUCESSO, FALHA, NEGADO
+  dados_anteriores JSONB, -- estado anterior (para alterações)
+  dados_novos JSONB, -- estado novo (para alterações)
+  metadata JSONB, -- informações adicionais
+  nivel_criticidade VARCHAR(20) DEFAULT 'BAIXO', -- BAIXO, MEDIO, ALTO, CRITICO
+  data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  hash_integridade VARCHAR(64) -- hash SHA-256 para garantir imutabilidade
+);
+
+-- Índices para otimizar consultas
+CREATE INDEX IF NOT EXISTS idx_audit_logs_usuario ON audit_logs(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_acao ON audit_logs(acao);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_categoria ON audit_logs(categoria);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_data_hora ON audit_logs(data_hora DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resultado ON audit_logs(resultado);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_nivel ON audit_logs(nivel_criticidade);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_composite ON audit_logs(categoria, acao, data_hora DESC);
+
+-- Trigger para calcular hash de integridade (imutabilidade)
+CREATE OR REPLACE FUNCTION calculate_audit_hash()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.hash_integridade := encode(
+    digest(
+      COALESCE(NEW.usuario_id::text, '') || '|' ||
+      COALESCE(NEW.acao, '') || '|' ||
+      COALESCE(NEW.categoria, '') || '|' ||
+      COALESCE(NEW.descricao, '') || '|' ||
+      COALESCE(NEW.data_hora::text, '') || '|' ||
+      COALESCE(NEW.dados_anteriores::text, '') || '|' ||
+      COALESCE(NEW.dados_novos::text, ''),
+      'sha256'
+    ),
+    'hex'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER audit_logs_hash_trigger
+  BEFORE INSERT ON audit_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION calculate_audit_hash();
+
+-- Impedir UPDATE e DELETE em audit_logs (imutabilidade)
+CREATE OR REPLACE FUNCTION prevent_audit_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Logs de auditoria são imutáveis e não podem ser modificados ou excluídos';
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_audit_update
+  BEFORE UPDATE ON audit_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_audit_modification();
+
+CREATE TRIGGER prevent_audit_delete
+  BEFORE DELETE ON audit_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_audit_modification();
