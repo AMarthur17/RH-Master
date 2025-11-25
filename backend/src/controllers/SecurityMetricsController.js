@@ -452,6 +452,298 @@ class SecurityMetricsController {
   }
 
   /**
+   * Calcular a métrica de Cobertura de Regras de Acesso por Perfil
+   * Fórmula: X = (Funcionalidades com RBAC / Total de funcionalidades) × 100
+   * Interpretação: X = 100% indica controle de acesso completo
+   */
+  static async calcularCoberturaAcesso(req, res) {
+    try {
+      const { perfil, nivelRisco } = req.query;
+
+      let whereClause = "WHERE 1=1";
+      const valores = [];
+      let paramCount = 1;
+
+      if (perfil) {
+        whereClause += ` AND perfil = $${paramCount}`;
+        valores.push(perfil);
+        paramCount++;
+      }
+
+      if (nivelRisco) {
+        whereClause += ` AND nivel_risco = $${paramCount}`;
+        valores.push(nivelRisco);
+        paramCount++;
+      }
+
+      // Contar total de funcionalidades
+      const queryTotal = `
+        SELECT COUNT(*) as total
+        FROM access_rules
+        ${whereClause}
+      `;
+
+      const resultTotal = await db.query(queryTotal, valores);
+      const totalFuncionalidades = parseInt(resultTotal.rows[0].total);
+
+      // Contar funcionalidades com RBAC
+      const queryComRBAC = `
+        SELECT COUNT(*) as total
+        FROM access_rules
+        ${whereClause} AND tem_rbac = TRUE
+      `;
+
+      const resultComRBAC = await db.query(queryComRBAC, valores);
+      const totalComRBAC = parseInt(resultComRBAC.rows[0].total);
+
+      // Calcular a cobertura
+      let cobertura = 0;
+      let interpretacao = "";
+
+      if (totalFuncionalidades === 0) {
+        interpretacao = "Não há funcionalidades registradas no sistema.";
+      } else {
+        cobertura = ((totalComRBAC / totalFuncionalidades) * 100).toFixed(2);
+
+        if (cobertura === "100.00") {
+          interpretacao = "Excelente! 100% de controle de acesso completo.";
+        } else if (parseFloat(cobertura) >= 90) {
+          interpretacao = "Muito bom! Alta cobertura de regras de acesso.";
+        } else if (parseFloat(cobertura) >= 70) {
+          interpretacao = "Bom. Cobertura adequada, mas pode melhorar.";
+        } else if (parseFloat(cobertura) >= 50) {
+          interpretacao = "Atenção! Cobertura abaixo do ideal.";
+        } else {
+          interpretacao = "Crítico! Baixa cobertura de regras de acesso.";
+        }
+      }
+
+      // Buscar funcionalidades sem RBAC (alto risco)
+      const querySemRBAC = `
+        SELECT 
+          perfil, funcionalidade, endpoint, metodo, nivel_risco, descricao
+        FROM access_rules
+        ${whereClause} AND tem_rbac = FALSE
+        ORDER BY 
+          CASE nivel_risco
+            WHEN 'CRITICO' THEN 1
+            WHEN 'ALTO' THEN 2
+            WHEN 'MEDIO' THEN 3
+            WHEN 'BAIXO' THEN 4
+          END,
+          perfil, funcionalidade
+        LIMIT 20
+      `;
+
+      const resultSemRBAC = await db.query(querySemRBAC, valores);
+
+      // Estatísticas por perfil
+      const queryPorPerfil = `
+        SELECT 
+          perfil,
+          COUNT(*) as total_funcionalidades,
+          SUM(CASE WHEN tem_rbac = TRUE THEN 1 ELSE 0 END) as com_rbac,
+          ROUND(
+            (SUM(CASE WHEN tem_rbac = TRUE THEN 1 ELSE 0 END)::NUMERIC / COUNT(*)) * 100,
+            2
+          ) as cobertura_percentual
+        FROM access_rules
+        ${whereClause.replace('WHERE 1=1', 'WHERE 1=1').replace(` AND perfil = $1`, '')}
+        GROUP BY perfil
+        ORDER BY cobertura_percentual ASC
+      `;
+
+      const valoresPerfil = perfil ? [] : valores.slice(1);
+      const resultPorPerfil = await db.query(queryPorPerfil, valoresPerfil);
+
+      // Estatísticas por nível de risco
+      const queryPorRisco = `
+        SELECT 
+          nivel_risco,
+          COUNT(*) as total_funcionalidades,
+          SUM(CASE WHEN tem_rbac = TRUE THEN 1 ELSE 0 END) as com_rbac,
+          ROUND(
+            (SUM(CASE WHEN tem_rbac = TRUE THEN 1 ELSE 0 END)::NUMERIC / COUNT(*)) * 100,
+            2
+          ) as cobertura_percentual
+        FROM access_rules
+        ${whereClause}
+        GROUP BY nivel_risco
+        ORDER BY 
+          CASE nivel_risco
+            WHEN 'CRITICO' THEN 1
+            WHEN 'ALTO' THEN 2
+            WHEN 'MEDIO' THEN 3
+            WHEN 'BAIXO' THEN 4
+          END
+      `;
+
+      const resultPorRisco = await db.query(queryPorRisco, valores);
+
+      return res.json({
+        metrica: "Cobertura de Regras de Acesso por Perfil",
+        formula: "X = (Funcionalidades com RBAC / Total de funcionalidades) × 100%",
+        filtros: {
+          perfil: perfil || "Todos",
+          nivelRisco: nivelRisco || "Todos",
+        },
+        dados: {
+          totalFuncionalidades,
+          totalComRBAC,
+          totalSemRBAC: totalFuncionalidades - totalComRBAC,
+          coberturaPercentual: parseFloat(cobertura),
+        },
+        interpretacao,
+        tipo: "Interna",
+        medida: "Percentual",
+        funcionalidadesSemRBAC: resultSemRBAC.rows,
+        estatisticasPorPerfil: resultPorPerfil.rows,
+        estatisticasPorNivelRisco: resultPorRisco.rows,
+      });
+    } catch (error) {
+      console.error("[SecurityMetricsController] Erro ao calcular cobertura de acesso:", error);
+      return res.status(500).json({
+        error: "Erro ao calcular métrica de cobertura de acesso",
+        details: error.message,
+      });
+    }
+  }
+
+  /**
+   * Registrar ou atualizar uma regra de acesso
+   */
+  static async registrarRegraAcesso(req, res) {
+    try {
+      const {
+        perfil,
+        funcionalidade,
+        endpoint,
+        metodo,
+        temRbac,
+        nivelRisco,
+        descricao,
+      } = req.body;
+
+      if (!perfil || !funcionalidade) {
+        return res.status(400).json({
+          error: "Campos obrigatórios: perfil, funcionalidade",
+        });
+      }
+
+      const query = `
+        INSERT INTO access_rules 
+          (perfil, funcionalidade, endpoint, metodo, tem_rbac, nivel_risco, descricao)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (perfil, funcionalidade) 
+        DO UPDATE SET
+          endpoint = COALESCE(EXCLUDED.endpoint, access_rules.endpoint),
+          metodo = COALESCE(EXCLUDED.metodo, access_rules.metodo),
+          tem_rbac = COALESCE(EXCLUDED.tem_rbac, access_rules.tem_rbac),
+          nivel_risco = COALESCE(EXCLUDED.nivel_risco, access_rules.nivel_risco),
+          descricao = COALESCE(EXCLUDED.descricao, access_rules.descricao),
+          atualizado_em = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+      const valores = [
+        perfil,
+        funcionalidade,
+        endpoint || null,
+        metodo || null,
+        temRbac || false,
+        nivelRisco || "MEDIO",
+        descricao || null,
+      ];
+
+      const result = await db.query(query, valores);
+
+      return res.status(201).json({
+        message: "Regra de acesso registrada com sucesso",
+        regra: result.rows[0],
+      });
+    } catch (error) {
+      console.error("[SecurityMetricsController] Erro ao registrar regra:", error);
+      return res.status(500).json({
+        error: "Erro ao registrar regra de acesso",
+        details: error.message,
+      });
+    }
+  }
+
+  /**
+   * Listar todas as regras de acesso
+   */
+  static async listarRegrasAcesso(req, res) {
+    try {
+      const { perfil, temRbac, nivelRisco, page = 1, limit = 100 } = req.query;
+
+      let whereClause = "WHERE 1=1";
+      const valores = [];
+      let paramCount = 1;
+
+      if (perfil) {
+        whereClause += ` AND perfil = $${paramCount}`;
+        valores.push(perfil);
+        paramCount++;
+      }
+
+      if (temRbac !== undefined) {
+        whereClause += ` AND tem_rbac = $${paramCount}`;
+        valores.push(temRbac === "true" || temRbac === true);
+        paramCount++;
+      }
+
+      if (nivelRisco) {
+        whereClause += ` AND nivel_risco = $${paramCount}`;
+        valores.push(nivelRisco);
+        paramCount++;
+      }
+
+      // Contar total
+      const countQuery = `SELECT COUNT(*) FROM access_rules ${whereClause}`;
+      const countResult = await db.query(countQuery, valores);
+      const total = parseInt(countResult.rows[0].count);
+
+      // Buscar regras com paginação
+      const query = `
+        SELECT *
+        FROM access_rules
+        ${whereClause}
+        ORDER BY 
+          CASE nivel_risco
+            WHEN 'CRITICO' THEN 1
+            WHEN 'ALTO' THEN 2
+            WHEN 'MEDIO' THEN 3
+            WHEN 'BAIXO' THEN 4
+          END,
+          perfil, funcionalidade
+        LIMIT $${paramCount} OFFSET $${paramCount + 1}
+      `;
+
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+      valores.push(parseInt(limit), offset);
+
+      const result = await db.query(query, valores);
+
+      return res.json({
+        regras: result.rows,
+        paginacao: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      });
+    } catch (error) {
+      console.error("[SecurityMetricsController] Erro ao listar regras:", error);
+      return res.status(500).json({
+        error: "Erro ao listar regras de acesso",
+        details: error.message,
+      });
+    }
+  }
+
+  /**
    * Detectar possíveis vazamentos a partir dos logs de auditoria
    * Analisa padrões suspeitos nos logs
    */

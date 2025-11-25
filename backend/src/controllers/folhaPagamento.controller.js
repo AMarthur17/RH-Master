@@ -68,6 +68,16 @@ export async function getFolhaUsuario(req, res) {
       return res.status(400).json({ error: "usuarioId é obrigatório" });
     }
 
+    // RBAC: Colaborador só pode ver sua própria folha
+    const perfil = (req.user?.perfil || "").toLowerCase();
+    const currentUserId = req.user?.id;
+    
+    if (perfil === 'colaborador' && currentUserId !== parseInt(usuarioId)) {
+      return res.status(403).json({ 
+        error: "Acesso negado. Você só pode visualizar sua própria folha de pagamento." 
+      });
+    }
+
     let query = `
       SELECT id, usuario_id, mes, ano, salario_base, total_pontos, valor, status, criado_em, atualizado_em
       FROM folha_pagamento

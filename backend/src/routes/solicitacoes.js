@@ -37,10 +37,10 @@ router.get('/:usuarioId', autenticar, async (req, res) => {
   return solicitacoesController.listarPorUsuario(req, res);
 });
 
-// Listar (admin) com filtros por empresa e pendentes
-router.get('/', autenticar, permitir(['admin', 'administrador']), solicitacoesController.listar.bind(solicitacoesController));
+// Listar (admin e gerente) com filtros por empresa e pendentes
+router.get('/', autenticar, permitir(['admin', 'administrador', 'gerente']), solicitacoesController.listar.bind(solicitacoesController));
 
-// Decidir (aprovar/recusar)
-router.put('/:id/decidir', autenticar, permitir(['admin', 'administrador']), solicitacoesController.decidir.bind(solicitacoesController));
+// Decidir (aprovar/recusar) - Admin e Gerente
+router.put('/:id/decidir', autenticar, permitir(['admin', 'administrador', 'gerente']), solicitacoesController.decidir.bind(solicitacoesController));
 
 export default router;

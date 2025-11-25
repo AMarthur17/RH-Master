@@ -92,8 +92,8 @@ router.get("/:usuario_id", autenticar, async (req, res) => {
   }
 });
 
-// Atualizar registro de ponto (somente administradores)
-router.put("/:id", autenticar, permitir(["admin", "administrador"]), async (req, res) => {
+// Atualizar registro de ponto (administradores e gerentes)
+router.put("/:id", autenticar, permitir(["admin", "administrador", "gerente"]), async (req, res) => {
   try {
     const registroId = req.params.id;
     const { tipo, data_hora, motivo } = req.body; // data_hora opcional (ISO string)
@@ -128,6 +128,58 @@ router.put("/:id", autenticar, permitir(["admin", "administrador"]), async (req,
     res.status(500).json({ error: "Erro ao atualizar registro" });
   }
 });
+
+// Rota para gerente/admin ver pontos da equipe
+router.get(
+  "/equipe/pontos",
+  autenticar,
+  permitir(["admin", "administrador", "gerente"]),
+  async (req, res) => {
+    try {
+      const { data_inicio, data_fim } = req.query;
+      const perfil = (req.user?.perfil || "").toLowerCase();
+      
+      let query = `
+        SELECT rp.*, u.nome as usuario_nome, u.empresa
+        FROM registro_ponto rp
+        INNER JOIN usuario u ON rp.usuario_id = u.id
+        WHERE 1=1
+      `;
+      const valores = [];
+      let paramCount = 1;
+      
+      // Gerente vê apenas sua empresa
+      if (perfil === "gerente") {
+        const gerenteQuery = await db.query("SELECT empresa FROM usuario WHERE id = $1", [req.user.id]);
+        if (gerenteQuery.rows.length > 0) {
+          query += ` AND u.empresa = $${paramCount}`;
+          valores.push(gerenteQuery.rows[0].empresa);
+          paramCount++;
+        }
+      }
+      
+      if (data_inicio) {
+        query += ` AND rp.data_hora >= $${paramCount}`;
+        valores.push(data_inicio);
+        paramCount++;
+      }
+      
+      if (data_fim) {
+        query += ` AND rp.data_hora <= $${paramCount}`;
+        valores.push(data_fim);
+        paramCount++;
+      }
+      
+      query += " ORDER BY rp.data_hora DESC";
+      
+      const result = await db.query(query, valores);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("[EQUIPE] Erro ao listar pontos:", error);
+      res.status(500).json({ error: "Erro ao listar pontos da equipe" });
+    }
+  }
+);
 
 export default router;
 

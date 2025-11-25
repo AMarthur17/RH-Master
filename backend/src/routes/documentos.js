@@ -2,6 +2,7 @@
 import express from "express";
 import { autenticar } from "../middleware/auth.js";
 import { permitir } from "../middleware/rbac.js";
+import { verificarProprioOuAdmin } from "../middleware/verificarProprio.js";
 import multer from "multer";
 import * as fs from "fs";
 import path from "path";
@@ -119,7 +120,7 @@ router.get("/:usuario_id", autenticar, async (req, res) => {
 router.post(
   "/:usuario_id",
   autenticar,
-  permitir(["admin", "administrador"]),
+  verificarProprioOuAdmin('usuario_id'),
   upload.single("arquivo"),
   async (req, res) => {
     const { usuario_id } = req.params;

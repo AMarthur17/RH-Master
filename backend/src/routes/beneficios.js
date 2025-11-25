@@ -102,7 +102,7 @@ router.get("/:usuario_id", autenticar, async (req, res) => {
 router.post(
   "/:usuario_id",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "rh"]),
   async (req, res) => {
     try {
       const usuarioId = Number(req.params.usuario_id);
@@ -147,7 +147,7 @@ router.post(
 router.put(
   "/:id",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "rh"]),
   async (req, res) => {
     try {
       const beneficioId = Number(req.params.id);
@@ -222,7 +222,7 @@ router.put(
 router.delete(
   "/:id",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "rh"]),
   async (req, res) => {
     try {
       const beneficioId = Number(req.params.id);

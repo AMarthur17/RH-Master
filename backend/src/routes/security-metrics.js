@@ -105,4 +105,54 @@ router.get(
   SecurityMetricsController.detectarVazamentos
 );
 
+/**
+ * @route GET /security-metrics/cobertura-acesso
+ * @desc Calcular a cobertura de regras de acesso por perfil
+ * @access Administrador
+ * @query {string} perfil - Filtrar por perfil específico (opcional)
+ * @query {string} nivelRisco - Filtrar por nível de risco (opcional)
+ */
+router.get(
+  "/cobertura-acesso",
+  verificarToken,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.calcularCoberturaAcesso
+);
+
+/**
+ * @route POST /security-metrics/regras-acesso
+ * @desc Registrar ou atualizar uma regra de acesso
+ * @access Administrador
+ * @body {string} perfil - Perfil do usuário (admin, colaborador, gerente, etc)
+ * @body {string} funcionalidade - Nome da funcionalidade
+ * @body {string} endpoint - Endpoint relacionado (opcional)
+ * @body {string} metodo - Método HTTP (opcional)
+ * @body {boolean} temRbac - Se tem controle RBAC implementado
+ * @body {string} nivelRisco - Nível de risco (BAIXO, MEDIO, ALTO, CRITICO)
+ * @body {string} descricao - Descrição da funcionalidade (opcional)
+ */
+router.post(
+  "/regras-acesso",
+  verificarToken,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.registrarRegraAcesso
+);
+
+/**
+ * @route GET /security-metrics/regras-acesso
+ * @desc Listar regras de acesso com filtros
+ * @access Administrador
+ * @query {string} perfil - Filtrar por perfil
+ * @query {boolean} temRbac - Filtrar por presença de RBAC
+ * @query {string} nivelRisco - Filtrar por nível de risco
+ * @query {number} page - Página (padrão: 1)
+ * @query {number} limit - Itens por página (padrão: 100)
+ */
+router.get(
+  "/regras-acesso",
+  verificarToken,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.listarRegrasAcesso
+);
+
 export default router;

@@ -6,6 +6,7 @@ import path from "path";
 import { autenticar } from "../middleware/auth.js";
 import { permitir } from "../middleware/rbac.js";
 import { validarCPF } from "../utils/cpf.js"; // <-- import da função de validação
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ const createUserFolder = (userId, userName) => {
   }
 };
 
-// Cadastro de usuário
+// Cadastro público de usuário (self-registration)
 router.post("/", async (req, res) => {
   try {
     const { nome, cpf, empresa, idade, email, senha, cargo } = req.body;
@@ -74,6 +75,48 @@ router.post("/", async (req, res) => {
     }
   }
 });
+
+// Cadastro de colaborador por Admin/RH
+router.post(
+  "/cadastrar", 
+  autenticar, 
+  permitir(["admin", "administrador", "rh"]), 
+  async (req, res) => {
+    try {
+      const { nome, cpf, empresa, idade, email, senha, cargo, salario } = req.body;
+      if (!nome || !cpf || !empresa || !idade || !email || !senha || !cargo) {
+        return res
+          .status(400)
+          .json({ error: "Todos os campos são obrigatórios." });
+      }
+
+      if (!validarCPF(cpf)) {
+        return res.status(400).json({ error: "CPF inválido." });
+      }
+
+      const hashedSenha = await bcrypt.hash(senha, 10);
+
+      const query = `
+        INSERT INTO usuario (nome, cpf, empresa, idade, email, senha, cargo, salario)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id, nome, email, cargo, empresa, salario
+      `;
+      const values = [nome, cpf, empresa, idade, email, hashedSenha, cargo, salario || 0];
+
+      const result = await db.query(query, values);
+
+      createUserFolder(result.rows[0].id, result.rows[0].nome);
+      res.status(201).json({ usuario: result.rows[0] });
+    } catch (error) {
+      console.error("Erro no cadastro de colaborador:", error);
+      if (error.code === "23505") {
+        res.status(409).json({ error: "CPF ou e-mail já cadastrado." });
+      } else {
+        res.status(500).json({ error: "Erro no servidor." });
+      }
+    }
+  }
+);
 
 // Login de usuário
 router.post("/login", async (req, res) => {
@@ -327,5 +370,38 @@ router.get("/:id/historico", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar histórico" });
   }
 });
+
+// Rota para gerente visualizar sua equipe
+router.get(
+  "/equipe",
+  autenticar,
+  permitir(["admin", "administrador", "gerente"]),
+  async (req, res) => {
+    try {
+      const perfil = (req.user?.perfil || "").toLowerCase();
+      
+      // Admin vê todos, gerente vê sua empresa
+      let query = "SELECT id, nome, email, empresa, cargo, salario FROM usuario WHERE 1=1";
+      const valores = [];
+      
+      if (perfil === "gerente") {
+        // Buscar empresa do gerente
+        const gerenteQuery = await db.query("SELECT empresa FROM usuario WHERE id = $1", [req.user.id]);
+        if (gerenteQuery.rows.length > 0) {
+          query += " AND empresa = $1 AND cargo != 'gerente' AND cargo != 'admin' AND cargo != 'administrador'";
+          valores.push(gerenteQuery.rows[0].empresa);
+        }
+      }
+      
+      query += " ORDER BY nome";
+      const result = await db.query(query, valores);
+      
+      res.json(result.rows);
+    } catch (error) {
+      console.error("[EQUIPE] Erro ao listar equipe:", error);
+      res.status(500).json({ error: "Erro ao listar equipe" });
+    }
+  }
+);
 
 export default router;

@@ -358,3 +358,26 @@ CREATE INDEX IF NOT EXISTS idx_data_transactions_data ON data_transactions(data_
 CREATE INDEX IF NOT EXISTS idx_data_transactions_tipo ON data_transactions(tipo_transacao);
 CREATE INDEX IF NOT EXISTS idx_data_transactions_categoria ON data_transactions(categoria_dados);
 
+-- ==============================
+-- TABELA DE REGRAS DE ACESSO POR PERFIL
+-- Implementação da métrica: Cobertura de Regras de Acesso por Perfil
+-- Fórmula: X = (Funcionalidades com RBAC / Total de funcionalidades com acesso restrito) × 100
+-- ==============================
+CREATE TABLE IF NOT EXISTS access_rules (
+  id SERIAL PRIMARY KEY,
+  perfil VARCHAR(50) NOT NULL, -- 'admin', 'colaborador', 'gerente', etc
+  funcionalidade VARCHAR(100) NOT NULL, -- Nome da funcionalidade (ex: 'CADASTRAR_USUARIO', 'VER_FOLHA')
+  endpoint VARCHAR(255), -- Endpoint da API relacionado
+  metodo VARCHAR(10), -- GET, POST, PUT, DELETE
+  tem_rbac BOOLEAN DEFAULT FALSE, -- Se tem controle de acesso implementado
+  nivel_risco VARCHAR(20) DEFAULT 'MEDIO', -- BAIXO, MEDIO, ALTO, CRITICO
+  descricao TEXT, -- Descrição da funcionalidade
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(perfil, funcionalidade)
+);
+
+CREATE INDEX IF NOT EXISTS idx_access_rules_perfil ON access_rules(perfil);
+CREATE INDEX IF NOT EXISTS idx_access_rules_rbac ON access_rules(tem_rbac);
+CREATE INDEX IF NOT EXISTS idx_access_rules_risco ON access_rules(nivel_risco);
+
