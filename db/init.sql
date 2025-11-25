@@ -302,3 +302,59 @@ CREATE TRIGGER prevent_audit_delete
   BEFORE DELETE ON audit_logs
   FOR EACH ROW
   EXECUTE FUNCTION prevent_audit_modification();
+
+-- ==============================
+-- TABELA DE INCIDENTES DE SEGURANÇA
+-- Implementação da métrica: Taxa de Incidentes de Vazamento de Dados
+-- ==============================
+CREATE TABLE IF NOT EXISTS security_incidents (
+  id SERIAL PRIMARY KEY,
+  tipo VARCHAR(50) NOT NULL, -- 'VAZAMENTO_DADOS', 'ACESSO_NAO_AUTORIZADO', 'TENTATIVA_INVASAO', etc
+  severidade VARCHAR(20) NOT NULL, -- 'BAIXA', 'MEDIA', 'ALTA', 'CRITICA'
+  descricao TEXT NOT NULL,
+  dados_afetados TEXT, -- Descrição dos dados que vazaram (sem incluir dados sensíveis)
+  quantidade_registros INTEGER DEFAULT 0, -- Quantidade de registros afetados
+  origem VARCHAR(100), -- Origem da detecção (ex: 'AUDITORIA_LOGS', 'MONITORAMENTO_MANUAL', 'ALERTA_SISTEMA')
+  usuario_id INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  usuario_responsavel VARCHAR(100), -- Nome do usuário relacionado ao incidente
+  endpoint VARCHAR(255), -- Endpoint relacionado
+  ip_address VARCHAR(45), -- IP envolvido
+  data_deteccao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  data_resolucao TIMESTAMP, -- Quando o incidente foi resolvido
+  status VARCHAR(20) DEFAULT 'ABERTO', -- 'ABERTO', 'EM_INVESTIGACAO', 'RESOLVIDO', 'FALSO_POSITIVO'
+  acao_corretiva TEXT, -- Ação tomada para resolver
+  detectado_por INTEGER REFERENCES usuario(id) ON DELETE SET NULL, -- Quem detectou
+  resolvido_por INTEGER REFERENCES usuario(id) ON DELETE SET NULL, -- Quem resolveu
+  metadata JSONB, -- Informações adicionais
+  audit_log_id INTEGER REFERENCES audit_logs(id) ON DELETE SET NULL -- Referência ao log de auditoria relacionado
+);
+
+-- Índices para otimizar consultas de métricas
+CREATE INDEX IF NOT EXISTS idx_security_incidents_tipo ON security_incidents(tipo);
+CREATE INDEX IF NOT EXISTS idx_security_incidents_severidade ON security_incidents(severidade);
+CREATE INDEX IF NOT EXISTS idx_security_incidents_status ON security_incidents(status);
+CREATE INDEX IF NOT EXISTS idx_security_incidents_data ON security_incidents(data_deteccao DESC);
+CREATE INDEX IF NOT EXISTS idx_security_incidents_composite ON security_incidents(tipo, status, data_deteccao DESC);
+
+-- ==============================
+-- TABELA DE TRANSAÇÕES DE DADOS
+-- Para calcular o total de transações (denominador da métrica)
+-- ==============================
+CREATE TABLE IF NOT EXISTS data_transactions (
+  id SERIAL PRIMARY KEY,
+  tipo_transacao VARCHAR(50) NOT NULL, -- 'CONSULTA', 'CRIACAO', 'ATUALIZACAO', 'EXCLUSAO', 'EXPORTACAO'
+  categoria_dados VARCHAR(50) NOT NULL, -- 'USUARIO', 'FOLHA_PAGAMENTO', 'DOCUMENTO', 'BENEFICIO', etc
+  quantidade_registros INTEGER DEFAULT 1, -- Quantidade de registros envolvidos na transação
+  usuario_id INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  endpoint VARCHAR(255),
+  sensibilidade VARCHAR(20) DEFAULT 'NORMAL', -- 'BAIXA', 'NORMAL', 'ALTA', 'CRITICA'
+  data_transacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  audit_log_id INTEGER REFERENCES audit_logs(id) ON DELETE CASCADE,
+  metadata JSONB
+);
+
+-- Índices para contagem rápida de transações
+CREATE INDEX IF NOT EXISTS idx_data_transactions_data ON data_transactions(data_transacao DESC);
+CREATE INDEX IF NOT EXISTS idx_data_transactions_tipo ON data_transactions(tipo_transacao);
+CREATE INDEX IF NOT EXISTS idx_data_transactions_categoria ON data_transactions(categoria_dados);
+

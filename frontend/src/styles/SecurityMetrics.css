@@ -1,0 +1,471 @@
+/* Estilos para a página de Métricas de Segurança */
+
+.security-metrics-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+/* Loading e Erro */
+.loading,
+.error-message {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message h3 {
+  color: #e74c3c;
+  margin-bottom: 1rem;
+}
+
+.error-message button {
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* Filtros */
+.filtros-section {
+  margin-bottom: 2rem;
+}
+
+.filtros-container {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filtro-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.filtro-item label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.filtro-item input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.filtro-acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #7f8c8d;
+}
+
+/* Métrica Principal */
+.metrica-principal {
+  margin-bottom: 2rem;
+}
+
+.metrica-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-left: 6px solid #3498db;
+}
+
+.metrica-card h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.taxa-valor {
+  font-size: 4rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+.interpretacao {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.metrica-detalhes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #ecf0f1;
+}
+
+.detalhe-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detalhe-item .label {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.detalhe-item .valor {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Classes de Taxa */
+.taxa-excelente {
+  border-left-color: #27ae60;
+}
+
+.taxa-excelente .taxa-valor {
+  color: #27ae60;
+}
+
+.taxa-bom {
+  border-left-color: #2ecc71;
+}
+
+.taxa-bom .taxa-valor {
+  color: #2ecc71;
+}
+
+.taxa-aceitavel {
+  border-left-color: #f39c12;
+}
+
+.taxa-aceitavel .taxa-valor {
+  color: #f39c12;
+}
+
+.taxa-preocupante {
+  border-left-color: #e67e22;
+}
+
+.taxa-preocupante .taxa-valor {
+  color: #e67e22;
+}
+
+.taxa-critico {
+  border-left-color: #e74c3c;
+}
+
+.taxa-critico .taxa-valor {
+  color: #e74c3c;
+}
+
+/* Alertas */
+.alertas-section {
+  margin-bottom: 2rem;
+}
+
+.alertas-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.alertas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.alerta-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #e74c3c;
+}
+
+.alerta-card h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.alerta-tipo {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.alerta-severidade {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Estatísticas */
+.estatisticas-section {
+  margin-bottom: 2rem;
+}
+
+.estatisticas-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.estatisticas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.estatistica-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.estatistica-card h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 0.5rem;
+}
+
+.estatistica-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.estatistica-card li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+/* Incidentes */
+.incidentes-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.sem-incidentes {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  color: #27ae60;
+  font-size: 1.2rem;
+}
+
+.incidentes-lista {
+  display: grid;
+  gap: 1rem;
+}
+
+.incidente-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.incidente-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.incidente-card h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.incidente-info p {
+  color: #555;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.btn-resolver {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.btn-resolver:hover {
+  background: #229954;
+}
+
+/* Severidades */
+.severidade-baixa {
+  color: #27ae60 !important;
+  border-left-color: #27ae60;
+}
+
+.severidade-baixa.badge {
+  background: #d5f4e6;
+  color: #27ae60;
+}
+
+.severidade-media {
+  color: #f39c12 !important;
+  border-left-color: #f39c12;
+}
+
+.severidade-media.badge {
+  background: #fef5e7;
+  color: #f39c12;
+}
+
+.severidade-alta {
+  color: #e67e22 !important;
+  border-left-color: #e67e22;
+}
+
+.severidade-alta.badge {
+  background: #fdebd0;
+  color: #e67e22;
+}
+
+.severidade-critica {
+  color: #e74c3c !important;
+  border-left-color: #e74c3c;
+}
+
+.severidade-critica.badge {
+  background: #fadbd8;
+  color: #e74c3c;
+}
+
+/* Status */
+.status-aberto.badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-investigacao.badge {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.status-resolvido.badge {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-falso.badge {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .filtros-container {
+    flex-direction: column;
+  }
+
+  .metrica-detalhes {
+    grid-template-columns: 1fr;
+  }
+
+  .estatisticas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .taxa-valor {
+    font-size: 3rem;
+  }
+}

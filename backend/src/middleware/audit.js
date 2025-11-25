@@ -1,4 +1,5 @@
 import AuditController from "../controllers/AuditController.js";
+import SecurityMetricsController from "../controllers/SecurityMetricsController.js";
 
 /**
  * Middleware para auditoria automática de ações sensíveis
@@ -251,7 +252,104 @@ export function auditMiddleware(req, res, next) {
         }
 
         // Registrar no banco de dados
-        await AuditController.registrarLog(dadosAuditoria);
+        const logAuditoria = await AuditController.registrarLog(dadosAuditoria);
+
+        // Registrar transação de dados para métrica de segurança
+        if (resultado === "SUCESSO" && logAuditoria) {
+          // Determinar sensibilidade baseada na categoria
+          let sensibilidade = "NORMAL";
+          if (
+            acaoConfig.categoria === "FOLHA_PAGAMENTO" ||
+            acaoConfig.categoria === "BENEFICIO"
+          ) {
+            sensibilidade = "CRITICA";
+          } else if (
+            acaoConfig.categoria === "USUARIO" ||
+            acaoConfig.categoria === "DOCUMENTO"
+          ) {
+            sensibilidade = "ALTA";
+          }
+
+          // Mapear ação para tipo de transação
+          let tipoTransacao = "CONSULTA";
+          if (metodo === "POST") tipoTransacao = "CRIACAO";
+          else if (metodo === "PUT" || metodo === "PATCH")
+            tipoTransacao = "ATUALIZACAO";
+          else if (metodo === "DELETE") tipoTransacao = "EXCLUSAO";
+          else if (acaoConfig.acao.includes("RELATORIO"))
+            tipoTransacao = "EXPORTACAO";
+
+          await SecurityMetricsController.registrarTransacao(
+            tipoTransacao,
+            acaoConfig.categoria,
+            {
+              usuarioId,
+              endpoint: fullPath,
+              sensibilidade,
+              auditLogId: logAuditoria.id,
+              metadata: {
+                acao: acaoConfig.acao,
+                metodo,
+              },
+            }
+          );
+        }
+
+        // Detectar possíveis incidentes de segurança
+        if (resultado === "NEGADO" || resultado === "FALHA") {
+          // Verificar padrões suspeitos
+          if (
+            acaoConfig.categoria === "AUTENTICACAO" &&
+            resultado === "FALHA"
+          ) {
+            // Contar tentativas falhas recentes do mesmo IP
+            const query = `
+              SELECT COUNT(*) as tentativas
+              FROM audit_logs
+              WHERE ip_address = $1
+                AND categoria = 'AUTENTICACAO'
+                AND resultado = 'FALHA'
+                AND data_hora > NOW() - INTERVAL '15 minutes'
+            `;
+            
+            const db = (await import("../db.js")).default;
+            const result = await db.query(query, [ipAddress]);
+            const tentativas = parseInt(result.rows[0].tentativas);
+
+            // Se houver muitas tentativas falhas, registrar incidente
+            if (tentativas >= 5) {
+              await SecurityMetricsController.registrarTransacao(
+                "CONSULTA",
+                "AUTENTICACAO",
+                {
+                  usuarioId: null,
+                  endpoint: fullPath,
+                  sensibilidade: "ALTA",
+                  auditLogId: logAuditoria?.id,
+                }
+              );
+
+              // Registrar incidente automaticamente
+              const incidenteQuery = `
+                INSERT INTO security_incidents (
+                  tipo, severidade, descricao, origem, ip_address,
+                  audit_log_id, status
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT DO NOTHING
+              `;
+
+              await db.query(incidenteQuery, [
+                "TENTATIVAS_FALHAS_AUTENTICACAO",
+                "ALTA",
+                `${tentativas} tentativas falhas de autenticação do IP ${ipAddress} nos últimos 15 minutos`,
+                "AUDITORIA_AUTOMATICA",
+                ipAddress,
+                logAuditoria?.id,
+                "ABERTO",
+              ]);
+            }
+          }
+        }
       } catch (error) {
         console.error("[AuditMiddleware] Erro ao registrar auditoria:", error);
         // Não propagar erro para não afetar a operação principal

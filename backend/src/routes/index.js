@@ -8,6 +8,7 @@ import solicitacoesRoutes from "./solicitacoes.js";
 import feriasRoutes from "./ferias.js";
 import schedulesRoutes from "./schedules.js";
 import auditRoutes from "./audit.js";
+import securityMetricsRoutes from "./security-metrics.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/solicitacoes", solicitacoesRoutes);
 router.use("/ferias", feriasRoutes);
 router.use("/schedules", schedulesRoutes);
 router.use("/audit", auditRoutes);
+router.use("/security-metrics", securityMetricsRoutes);
 
 export default router;
