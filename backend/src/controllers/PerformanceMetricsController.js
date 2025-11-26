@@ -1,5 +1,5 @@
 import os from 'os';
-import { database } from '../db.js';
+import db from '../db.js';
 
 /**
  * Controller para métricas de performance da aplicação
@@ -13,7 +13,7 @@ let totalResponseTime = 0;
 let maxResponseTime = 0;
 let minResponseTime = Infinity;
 
-export const PerformanceMetricsController = {
+export default {
   /**
    * GET /api/performance-metrics
    * Retorna as métricas atuais de performance

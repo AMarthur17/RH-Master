@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PerformanceMetricsController } from '../controllers/PerformanceMetricsController.js';
+import PerformanceMetricsController from '../controllers/PerformanceMetricsController.js';
 import { autenticar } from '../middleware/auth.js';
 
 const router = Router();

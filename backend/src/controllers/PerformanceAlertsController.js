@@ -1,5 +1,5 @@
-import { database } from '../db.js';
-import { AuditController } from './AuditController.js';
+import db from '../db.js';
+import AuditController from './AuditController.js';
 
 /**
  * Controller para Alertas de Performance
@@ -19,7 +19,7 @@ const THRESHOLDS = {
 let alertsHistory = [];
 const MAX_HISTORY = 1000;
 
-export const PerformanceAlertsController = {
+export default {
   /**
    * POST /api/performance-alerts/check
    * Verifica métricas atuais contra thresholds

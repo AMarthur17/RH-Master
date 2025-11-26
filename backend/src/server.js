@@ -16,7 +16,7 @@ import reportScheduler from './services/reportScheduler.service.js';
 
 // Importar middleware de auditoria e performance
 import { auditMiddleware } from "./middleware/audit.js";
-import { PerformanceMetricsController } from "./controllers/PerformanceMetricsController.js";
+import PerformanceMetricsController from "./controllers/PerformanceMetricsController.js";
 import PerformanceMonitorService from "./services/performanceMonitor.service.js";
 
 dotenv.config();

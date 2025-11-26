@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import { PerformanceAlertsController } from '../controllers/PerformanceAlertsController.js';
-import { PerformanceMetricsController } from '../controllers/PerformanceMetricsController.js';
+import PerformanceAlertsController from '../controllers/PerformanceAlertsController.js';
+import PerformanceMetricsController from '../controllers/PerformanceMetricsController.js';
 
 /**
  * Serviço de monitoramento automático de performance
@@ -10,7 +10,7 @@ import { PerformanceMetricsController } from '../controllers/PerformanceMetricsC
 let cronJob = null;
 let isRunning = false;
 
-export const PerformanceMonitorService = {
+export default {
   /**
    * Inicia o monitoramento automático
    * Executa verificação a cada 1 minuto
@@ -24,7 +24,7 @@ export const PerformanceMonitorService = {
     // Agendar para executar a cada minuto
     cronJob = cron.schedule('*/1 * * * *', async () => {
       try {
-        await PerformanceMonitorService.verificarEDispararAlertas();
+        await this.verificarEDispararAlertas();
       } catch (error) {
         console.error('❌ Erro no monitoramento de performance:', error);
       }
@@ -80,5 +80,3 @@ export const PerformanceMonitorService = {
     return isRunning;
   }
 };
-
-export default PerformanceMonitorService;

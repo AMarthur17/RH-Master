@@ -1,11 +1,11 @@
-import { database } from '../db.js';
+import db from '../db.js';
 
 /**
  * Controller para Análise de Performance e Histórico
  * Fornece relatórios, análises e integração com auditoria
  */
 
-export const PerformanceAnalyticsController = {
+export default {
   /**
    * GET /api/performance-analytics/historico-completo
    * Retorna histórico detalhado de métricas com análise
