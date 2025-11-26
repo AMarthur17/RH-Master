@@ -1,5 +1,5 @@
-import db from '../db.js';
-import AuditController from './AuditController.js';
+import db from "../db.js";
+import AuditController from "./AuditController.js";
 
 /**
  * Controller para Alertas de Performance
@@ -8,11 +8,11 @@ import AuditController from './AuditController.js';
 
 // Thresholds padrão
 const THRESHOLDS = {
-  cpu: 80,                    // CPU > 80%
-  memoria: 85,                // Memória > 85%
-  tempoResposta: 2000,        // Tempo resposta > 2s (2000ms)
-  taxaErros: 10,              // Taxa de erros > 10%
-  downtime: 0                 // Downtime detectado
+  cpu: 80, // CPU > 80%
+  memoria: 85, // Memória > 85%
+  tempoResposta: 2000, // Tempo resposta > 2s (2000ms)
+  taxaErros: 10, // Taxa de erros > 10%
+  downtime: 0, // Downtime detectado
 };
 
 // Histórico para detectar padrões
@@ -33,10 +33,10 @@ export default {
         ORDER BY created_at DESC 
         LIMIT 1
       `;
-      
+
       const resultMetrica = await database.query(queryMetrica);
       if (resultMetrica.rows.length === 0) {
-        return res.status(404).json({ erro: 'Nenhuma métrica disponível' });
+        return res.status(404).json({ erro: "Nenhuma métrica disponível" });
       }
 
       const metrica = resultMetrica.rows[0];
@@ -46,12 +46,12 @@ export default {
       // Verificar CPU
       if (metrica.cpu_percent > THRESHOLDS.cpu) {
         const alerta = {
-          tipo: 'CPU_ELEVADA',
-          severidade: 'ALTA',
+          tipo: "CPU_ELEVADA",
+          severidade: "ALTA",
           valor: metrica.cpu_percent,
           threshold: THRESHOLDS.cpu,
           mensagem: `CPU acima do limite: ${metrica.cpu_percent}% > ${THRESHOLDS.cpu}%`,
-          recurso: 'CPU'
+          recurso: "CPU",
         };
         alertas.push(alerta);
         alertasDisprados.push(alerta);
@@ -60,12 +60,12 @@ export default {
       // Verificar Memória
       if (metrica.memoria_percent > THRESHOLDS.memoria) {
         const alerta = {
-          tipo: 'MEMORIA_ELEVADA',
-          severidade: 'ALTA',
+          tipo: "MEMORIA_ELEVADA",
+          severidade: "ALTA",
           valor: metrica.memoria_percent,
           threshold: THRESHOLDS.memoria,
           mensagem: `Memória acima do limite: ${metrica.memoria_percent}% > ${THRESHOLDS.memoria}%`,
-          recurso: 'MEMORIA'
+          recurso: "MEMORIA",
         };
         alertas.push(alerta);
         alertasDisprados.push(alerta);
@@ -74,12 +74,12 @@ export default {
       // Verificar Tempo de Resposta
       if (metrica.tempo_resposta_ms > THRESHOLDS.tempoResposta) {
         const alerta = {
-          tipo: 'TEMPO_RESPOSTA_ELEVADO',
-          severidade: 'MEDIA',
+          tipo: "TEMPO_RESPOSTA_ELEVADO",
+          severidade: "MEDIA",
           valor: metrica.tempo_resposta_ms,
           threshold: THRESHOLDS.tempoResposta,
           mensagem: `Tempo de resposta acima do limite: ${metrica.tempo_resposta_ms}ms > ${THRESHOLDS.tempoResposta}ms`,
-          recurso: 'TEMPO_RESPOSTA'
+          recurso: "TEMPO_RESPOSTA",
         };
         alertas.push(alerta);
         alertasDisprados.push(alerta);
@@ -88,12 +88,12 @@ export default {
       // Verificar Disponibilidade
       if (metrica.disponibilidade_percent < 95) {
         const alerta = {
-          tipo: 'DISPONIBILIDADE_BAIXA',
-          severidade: 'CRITICA',
+          tipo: "DISPONIBILIDADE_BAIXA",
+          severidade: "CRITICA",
           valor: metrica.disponibilidade_percent,
           threshold: 95,
           mensagem: `Disponibilidade baixa: ${metrica.disponibilidade_percent}% < 95%`,
-          recurso: 'DISPONIBILIDADE'
+          recurso: "DISPONIBILIDADE",
         };
         alertas.push(alerta);
         alertasDisprados.push(alerta);
@@ -113,47 +113,58 @@ export default {
 
       // Registrar na auditoria se houve alertas críticos
       if (alertasDisprados.length > 0) {
-        const alertasCriticos = alertasDisprados.filter(a => a.severidade === 'CRITICA');
+        const alertasCriticos = alertasDisprados.filter(
+          (a) => a.severidade === "CRITICA"
+        );
         if (alertasCriticos.length > 0) {
           // Registrar na auditoria
           try {
             await AuditController.registrarLog(
               req.user?.id || 0,
-              'ALERT_PERFORMANCE_CRITICO',
-              'SISTEMA',
+              "ALERT_PERFORMANCE_CRITICO",
+              "SISTEMA",
               `Sistema dispara ${alertasCriticos.length} alerta(s) crítico(s)`,
               { alertas: alertasCriticos },
-              'ESCRITA'
+              "ESCRITA"
             );
           } catch (auditError) {
-            console.error('Erro ao registrar na auditoria:', auditError);
+            console.error("Erro ao registrar na auditoria:", auditError);
           }
         }
       }
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         metricas: {
           cpu_percent: metrica.cpu_percent,
           memoria_percent: metrica.memoria_percent,
           tempo_resposta_ms: metrica.tempo_resposta_ms,
-          disponibilidade_percent: metrica.disponibilidade_percent
+          disponibilidade_percent: metrica.disponibilidade_percent,
         },
         alertas_disparados: alertasDisprados.length,
         alertas: alertasDisprados,
-        thresholds: THRESHOLDS
+        thresholds: THRESHOLDS,
       });
     } catch (error) {
-      console.error('Erro ao verificar métricas:', error);
-      return res.status(500).json({ erro: 'Erro ao verificar métricas', detalhes: error.message });
+      console.error("Erro ao verificar métricas:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao verificar métricas", detalhes: error.message });
     }
   },
 
   /**
    * Salva um alerta no banco de dados
    */
-  async salvarAlerta(tipo, severidade, mensagem, recurso, valor, usuarioId = null) {
+  async salvarAlerta(
+    tipo,
+    severidade,
+    mensagem,
+    recurso,
+    valor,
+    usuarioId = null
+  ) {
     try {
       const query = `
         INSERT INTO performance_alerts 
@@ -168,14 +179,14 @@ export default {
         mensagem,
         recurso,
         valor,
-        usuarioId
+        usuarioId,
       ]);
 
       alertsHistory.push({
         id: resultado.rows[0].id,
         timestamp: new Date(),
         tipo,
-        severidade
+        severidade,
       });
 
       // Manter histórico limitado
@@ -185,7 +196,7 @@ export default {
 
       return resultado.rows[0];
     } catch (error) {
-      console.error('Erro ao salvar alerta:', error);
+      console.error("Erro ao salvar alerta:", error);
       throw error;
     }
   },
@@ -196,17 +207,17 @@ export default {
    */
   async listarAlertas(req, res) {
     try {
-      const { 
-        tipo, 
-        severidade, 
-        status = 'ABERTO',
+      const {
+        tipo,
+        severidade,
+        status = "ABERTO",
         dataInicio,
         dataFim,
         page = 1,
-        limite = 50
+        limite = 50,
       } = req.query;
 
-      let query = 'SELECT * FROM performance_alerts WHERE 1=1';
+      let query = "SELECT * FROM performance_alerts WHERE 1=1";
       const params = [];
       let paramIndex = 1;
 
@@ -240,7 +251,7 @@ export default {
       const resultado = await database.query(query, params);
 
       // Contar total
-      let countQuery = 'SELECT COUNT(*) FROM performance_alerts WHERE 1=1';
+      let countQuery = "SELECT COUNT(*) FROM performance_alerts WHERE 1=1";
       const countParams = [];
       let countIndex = 1;
 
@@ -269,18 +280,20 @@ export default {
       const total = parseInt(countResult.rows[0].count);
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         paginacao: {
           page: parseInt(page),
           limite: parseInt(limite),
           total,
-          paginas: Math.ceil(total / limite)
+          paginas: Math.ceil(total / limite),
         },
-        alertas: resultado.rows
+        alertas: resultado.rows,
       });
     } catch (error) {
-      console.error('Erro ao listar alertas:', error);
-      return res.status(500).json({ erro: 'Erro ao listar alertas', detalhes: error.message });
+      console.error("Erro ao listar alertas:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao listar alertas", detalhes: error.message });
     }
   },
 
@@ -292,20 +305,22 @@ export default {
     try {
       const { id } = req.params;
 
-      const query = 'SELECT * FROM performance_alerts WHERE id = $1';
+      const query = "SELECT * FROM performance_alerts WHERE id = $1";
       const resultado = await database.query(query, [id]);
 
       if (resultado.rows.length === 0) {
-        return res.status(404).json({ erro: 'Alerta não encontrado' });
+        return res.status(404).json({ erro: "Alerta não encontrado" });
       }
 
       return res.json({
-        status: 'ok',
-        alerta: resultado.rows[0]
+        status: "ok",
+        alerta: resultado.rows[0],
       });
     } catch (error) {
-      console.error('Erro ao obter alerta:', error);
-      return res.status(500).json({ erro: 'Erro ao obter alerta', detalhes: error.message });
+      console.error("Erro ao obter alerta:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter alerta", detalhes: error.message });
     }
   },
 
@@ -318,8 +333,13 @@ export default {
       const { id } = req.params;
       const { status, notas } = req.body;
 
-      if (!status || !['ABERTO', 'EM_INVESTIGACAO', 'RESOLVIDO', 'FALSO_POSITIVO'].includes(status)) {
-        return res.status(400).json({ erro: 'Status inválido' });
+      if (
+        !status ||
+        !["ABERTO", "EM_INVESTIGACAO", "RESOLVIDO", "FALSO_POSITIVO"].includes(
+          status
+        )
+      ) {
+        return res.status(400).json({ erro: "Status inválido" });
       }
 
       const query = `
@@ -329,34 +349,40 @@ export default {
         RETURNING *
       `;
 
-      const resultado = await database.query(query, [status, notas || null, id]);
+      const resultado = await database.query(query, [
+        status,
+        notas || null,
+        id,
+      ]);
 
       if (resultado.rows.length === 0) {
-        return res.status(404).json({ erro: 'Alerta não encontrado' });
+        return res.status(404).json({ erro: "Alerta não encontrado" });
       }
 
       // Registrar na auditoria
       try {
         await AuditController.registrarLog(
           req.user?.id || 0,
-          'UPDATE_PERFORMANCE_ALERT',
-          'ALERT',
+          "UPDATE_PERFORMANCE_ALERT",
+          "ALERT",
           `Alerta #${id} atualizado para status: ${status}`,
           { alerta_id: id, novo_status: status },
-          'ESCRITA'
+          "ESCRITA"
         );
       } catch (auditError) {
-        console.error('Erro ao registrar na auditoria:', auditError);
+        console.error("Erro ao registrar na auditoria:", auditError);
       }
 
       return res.json({
-        status: 'ok',
-        mensagem: 'Alerta atualizado com sucesso',
-        alerta: resultado.rows[0]
+        status: "ok",
+        mensagem: "Alerta atualizado com sucesso",
+        alerta: resultado.rows[0],
       });
     } catch (error) {
-      console.error('Erro ao atualizar alerta:', error);
-      return res.status(500).json({ erro: 'Erro ao atualizar alerta', detalhes: error.message });
+      console.error("Erro ao atualizar alerta:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao atualizar alerta", detalhes: error.message });
     }
   },
 
@@ -387,7 +413,7 @@ export default {
       const stats = resultado.rows[0];
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         estatisticas: {
           total: parseInt(stats.total_alertas || 0),
@@ -395,21 +421,23 @@ export default {
             criticos: parseInt(stats.alertas_criticos || 0),
             altos: parseInt(stats.alertas_altos || 0),
             medios: parseInt(stats.alertas_medios || 0),
-            baixos: parseInt(stats.alertas_baixos || 0)
+            baixos: parseInt(stats.alertas_baixos || 0),
           },
           por_status: {
             abertos: parseInt(stats.alertas_abertos || 0),
-            resolvidos: parseInt(stats.alertas_resolvidos || 0)
+            resolvidos: parseInt(stats.alertas_resolvidos || 0),
           },
-          tempo_medio_resolucao_minutos: stats.tempo_medio_resolucao_segundos 
+          tempo_medio_resolucao_minutos: stats.tempo_medio_resolucao_segundos
             ? (stats.tempo_medio_resolucao_segundos / 60).toFixed(2)
-            : 'N/A',
-          ultimo_alerta: stats.ultimo_alerta
-        }
+            : "N/A",
+          ultimo_alerta: stats.ultimo_alerta,
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter estatísticas:', error);
-      return res.status(500).json({ erro: 'Erro ao obter estatísticas', detalhes: error.message });
+      console.error("Erro ao obter estatísticas:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter estatísticas", detalhes: error.message });
     }
   },
 
@@ -436,13 +464,18 @@ export default {
       const resultado = await database.query(query);
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
-        alertas_por_tipo: resultado.rows
+        alertas_por_tipo: resultado.rows,
       });
     } catch (error) {
-      console.error('Erro ao obter alertas por tipo:', error);
-      return res.status(500).json({ erro: 'Erro ao obter alertas por tipo', detalhes: error.message });
+      console.error("Erro ao obter alertas por tipo:", error);
+      return res
+        .status(500)
+        .json({
+          erro: "Erro ao obter alertas por tipo",
+          detalhes: error.message,
+        });
     }
   },
 
@@ -459,5 +492,5 @@ export default {
   atualizarThresholds(novosTresholds) {
     Object.assign(THRESHOLDS, novosTresholds);
     return THRESHOLDS;
-  }
+  },
 };

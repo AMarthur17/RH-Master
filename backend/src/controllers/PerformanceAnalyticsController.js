@@ -1,4 +1,4 @@
-import db from '../db.js';
+import db from "../db.js";
 
 /**
  * Controller para Análise de Performance e Histórico
@@ -12,16 +12,16 @@ export default {
    */
   async obterHistoricoCompleto(req, res) {
     try {
-      const { 
+      const {
         horas = 24,
         limite = 1000,
-        tipo = 'metricas' // 'metricas', 'alertas', 'ambos'
+        tipo = "metricas", // 'metricas', 'alertas', 'ambos'
       } = req.query;
 
       let resultado = {};
 
       // Histórico de métricas
-      if (tipo === 'metricas' || tipo === 'ambos') {
+      if (tipo === "metricas" || tipo === "ambos") {
         const queryMetricas = `
           SELECT 
             id,
@@ -43,7 +43,7 @@ export default {
       }
 
       // Histórico de alertas
-      if (tipo === 'alertas' || tipo === 'ambos') {
+      if (tipo === "alertas" || tipo === "ambos") {
         const queryAlertas = `
           SELECT 
             id,
@@ -66,14 +66,16 @@ export default {
       }
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         tipo,
-        ...resultado
+        ...resultado,
       });
     } catch (error) {
-      console.error('Erro ao obter histórico completo:', error);
-      return res.status(500).json({ erro: 'Erro ao obter histórico', detalhes: error.message });
+      console.error("Erro ao obter histórico completo:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter histórico", detalhes: error.message });
     }
   },
 
@@ -83,7 +85,7 @@ export default {
    */
   async obterRelatorioDiario(req, res) {
     try {
-      const { data = new Date().toISOString().split('T')[0] } = req.query;
+      const { data = new Date().toISOString().split("T")[0] } = req.query;
 
       const query = `
         SELECT 
@@ -110,7 +112,7 @@ export default {
       `;
 
       const resMetricas = await database.query(query, [data]);
-      
+
       // Alertas do dia
       const queryAlertas = `
         SELECT 
@@ -135,11 +137,13 @@ export default {
         WHERE DATE(created_at) = $1 AND status = 'RESOLVIDO'
       `;
 
-      const resTempoAlerta = await database.query(queryTempoMedioAlerta, [data]);
+      const resTempoAlerta = await database.query(queryTempoMedioAlerta, [
+        data,
+      ]);
       const tempoMedioAlerta = resTempoAlerta.rows[0]?.tempo_medio_segundos;
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         data,
         resumo_metricas: resMetricas.rows[0] || {
           data,
@@ -147,14 +151,21 @@ export default {
           cpu_media: 0,
           memoria_media: 0,
           tempo_resposta_media: 0,
-          disponibilidade_media: 0
+          disponibilidade_media: 0,
         },
         alertas_por_tipo: resAlertas.rows,
-        tempo_medio_para_alerta_minutos: tempoMedioAlerta ? (tempoMedioAlerta / 60).toFixed(2) : 'N/A'
+        tempo_medio_para_alerta_minutos: tempoMedioAlerta
+          ? (tempoMedioAlerta / 60).toFixed(2)
+          : "N/A",
       });
     } catch (error) {
-      console.error('Erro ao obter relatório diário:', error);
-      return res.status(500).json({ erro: 'Erro ao obter relatório diário', detalhes: error.message });
+      console.error("Erro ao obter relatório diário:", error);
+      return res
+        .status(500)
+        .json({
+          erro: "Erro ao obter relatório diário",
+          detalhes: error.message,
+        });
     }
   },
 
@@ -164,15 +175,14 @@ export default {
    */
   async obterComparativo(req, res) {
     try {
-      const { 
-        dataInicio1,
-        dataFim1,
-        dataInicio2,
-        dataFim2
-      } = req.query;
+      const { dataInicio1, dataFim1, dataInicio2, dataFim2 } = req.query;
 
       if (!dataInicio1 || !dataFim1 || !dataInicio2 || !dataFim2) {
-        return res.status(400).json({ erro: 'Parâmetros obrigatórios: dataInicio1, dataFim1, dataInicio2, dataFim2' });
+        return res
+          .status(400)
+          .json({
+            erro: "Parâmetros obrigatórios: dataInicio1, dataFim1, dataInicio2, dataFim2",
+          });
       }
 
       const query = `
@@ -201,7 +211,7 @@ export default {
         dataInicio1,
         dataFim1,
         dataInicio2,
-        dataFim2
+        dataFim2,
       ]);
 
       const dados = resultado.rows;
@@ -209,30 +219,47 @@ export default {
 
       if (dados.length === 2) {
         variacao = {
-          cpu_variacao_percent: ((dados[1].cpu_media - dados[0].cpu_media) / dados[0].cpu_media * 100).toFixed(2),
-          memoria_variacao_percent: ((dados[1].memoria_media - dados[0].memoria_media) / dados[0].memoria_media * 100).toFixed(2),
-          tempo_resposta_variacao_percent: ((dados[1].tempo_resposta_media - dados[0].tempo_resposta_media) / dados[0].tempo_resposta_media * 100).toFixed(2),
-          disponibilidade_variacao_percent: ((dados[1].disponibilidade_media - dados[0].disponibilidade_media) / dados[0].disponibilidade_media * 100).toFixed(2)
+          cpu_variacao_percent: (
+            ((dados[1].cpu_media - dados[0].cpu_media) / dados[0].cpu_media) *
+            100
+          ).toFixed(2),
+          memoria_variacao_percent: (
+            ((dados[1].memoria_media - dados[0].memoria_media) /
+              dados[0].memoria_media) *
+            100
+          ).toFixed(2),
+          tempo_resposta_variacao_percent: (
+            ((dados[1].tempo_resposta_media - dados[0].tempo_resposta_media) /
+              dados[0].tempo_resposta_media) *
+            100
+          ).toFixed(2),
+          disponibilidade_variacao_percent: (
+            ((dados[1].disponibilidade_media - dados[0].disponibilidade_media) /
+              dados[0].disponibilidade_media) *
+            100
+          ).toFixed(2),
         };
       }
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         comparativo: {
           periodo1: {
             periodo: dados[0]?.periodo,
-            metricas: dados[0] || {}
+            metricas: dados[0] || {},
           },
           periodo2: {
             periodo: dados[1]?.periodo,
-            metricas: dados[1] || {}
+            metricas: dados[1] || {},
           },
-          variacao
-        }
+          variacao,
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter comparativo:', error);
-      return res.status(500).json({ erro: 'Erro ao obter comparativo', detalhes: error.message });
+      console.error("Erro ao obter comparativo:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter comparativo", detalhes: error.message });
     }
   },
 
@@ -242,40 +269,48 @@ export default {
    */
   async obterAcoesAuditadasCriticas(req, res) {
     try {
-      const { 
+      const {
         horas = 24,
-        tipo = 'todos', // 'usuario', 'folha', 'ferias', 'todos'
+        tipo = "todos", // 'usuario', 'folha', 'ferias', 'todos'
         page = 1,
-        limite = 50
+        limite = 50,
       } = req.query;
 
       let operacoesCriticas = [
-        'CREATE_USUARIO',
-        'UPDATE_USUARIO',
-        'DELETE_USUARIO',
-        'UPDATE_SALARIO',
-        'CREATE_FOLHA',
-        'UPDATE_FOLHA',
-        'DELETE_FOLHA',
-        'CREATE_FERIAS',
-        'UPDATE_FERIAS',
-        'DELETE_FERIAS',
-        'APROVAR_FERIAS',
-        'REJEITAR_FERIAS'
+        "CREATE_USUARIO",
+        "UPDATE_USUARIO",
+        "DELETE_USUARIO",
+        "UPDATE_SALARIO",
+        "CREATE_FOLHA",
+        "UPDATE_FOLHA",
+        "DELETE_FOLHA",
+        "CREATE_FERIAS",
+        "UPDATE_FERIAS",
+        "DELETE_FERIAS",
+        "APROVAR_FERIAS",
+        "REJEITAR_FERIAS",
       ];
 
       // Filtrar por tipo se especificado
-      if (tipo !== 'todos') {
-        if (tipo === 'usuario') {
-          operacoesCriticas = operacoesCriticas.filter(op => op.includes('USUARIO'));
-        } else if (tipo === 'folha') {
-          operacoesCriticas = operacoesCriticas.filter(op => op.includes('FOLHA'));
-        } else if (tipo === 'ferias') {
-          operacoesCriticas = operacoesCriticas.filter(op => op.includes('FERIAS'));
+      if (tipo !== "todos") {
+        if (tipo === "usuario") {
+          operacoesCriticas = operacoesCriticas.filter((op) =>
+            op.includes("USUARIO")
+          );
+        } else if (tipo === "folha") {
+          operacoesCriticas = operacoesCriticas.filter((op) =>
+            op.includes("FOLHA")
+          );
+        } else if (tipo === "ferias") {
+          operacoesCriticas = operacoesCriticas.filter((op) =>
+            op.includes("FERIAS")
+          );
         }
       }
 
-      const placeholders = operacoesCriticas.map((_, i) => `$${i + 1}`).join(',');
+      const placeholders = operacoesCriticas
+        .map((_, i) => `$${i + 1}`)
+        .join(",");
       const offset = (page - 1) * limite;
 
       const query = `
@@ -293,13 +328,15 @@ export default {
         WHERE tipo_operacao IN (${placeholders})
         AND created_at >= NOW() - INTERVAL '${horas} hours'
         ORDER BY created_at DESC
-        LIMIT $${operacoesCriticas.length + 1} OFFSET $${operacoesCriticas.length + 2}
+        LIMIT $${operacoesCriticas.length + 1} OFFSET $${
+        operacoesCriticas.length + 2
+      }
       `;
 
       const resultado = await database.query(query, [
         ...operacoesCriticas,
         limite,
-        offset
+        offset,
       ]);
 
       // Contar total
@@ -313,20 +350,25 @@ export default {
       const total = parseInt(countResult.rows[0].count);
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         tipo,
         paginacao: {
           page: parseInt(page),
           limite: parseInt(limite),
           total,
-          paginas: Math.ceil(total / limite)
+          paginas: Math.ceil(total / limite),
         },
-        acoes_criticas: resultado.rows
+        acoes_criticas: resultado.rows,
       });
     } catch (error) {
-      console.error('Erro ao obter ações auditadas críticas:', error);
-      return res.status(500).json({ erro: 'Erro ao obter ações auditadas', detalhes: error.message });
+      console.error("Erro ao obter ações auditadas críticas:", error);
+      return res
+        .status(500)
+        .json({
+          erro: "Erro ao obter ações auditadas",
+          detalhes: error.message,
+        });
     }
   },
 
@@ -366,34 +408,47 @@ export default {
       `;
 
       const resultado = await database.query(query);
-      
-      const cobertura = resultado.rows.map(row => ({
+
+      const cobertura = resultado.rows.map((row) => ({
         acao: row.acao,
         total_operacoes: parseInt(row.total_operacoes),
         operacoes_auditadas: parseInt(row.auditadas),
-        taxa_cobertura_percent: row.total_operacoes > 0 
-          ? (parseInt(row.auditadas) / parseInt(row.total_operacoes) * 100).toFixed(2)
-          : 0
+        taxa_cobertura_percent:
+          row.total_operacoes > 0
+            ? (
+                (parseInt(row.auditadas) / parseInt(row.total_operacoes)) *
+                100
+              ).toFixed(2)
+            : 0,
       }));
 
       // Total
       const totalOps = cobertura.reduce((sum, c) => sum + c.total_operacoes, 0);
-      const totalAuditadas = cobertura.reduce((sum, c) => sum + c.operacoes_auditadas, 0);
-      const coberturaTotalPercent = totalOps > 0 ? (totalAuditadas / totalOps * 100).toFixed(2) : 0;
+      const totalAuditadas = cobertura.reduce(
+        (sum, c) => sum + c.operacoes_auditadas,
+        0
+      );
+      const coberturaTotalPercent =
+        totalOps > 0 ? ((totalAuditadas / totalOps) * 100).toFixed(2) : 0;
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         cobertura_por_acao: cobertura,
         cobertura_total: {
           total_operacoes: totalOps,
           operacoes_auditadas: totalAuditadas,
-          taxa_cobertura_percent: parseFloat(coberturaTotalPercent)
-        }
+          taxa_cobertura_percent: parseFloat(coberturaTotalPercent),
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter cobertura de auditoria:', error);
-      return res.status(500).json({ erro: 'Erro ao obter cobertura de auditoria', detalhes: error.message });
+      console.error("Erro ao obter cobertura de auditoria:", error);
+      return res
+        .status(500)
+        .json({
+          erro: "Erro ao obter cobertura de auditoria",
+          detalhes: error.message,
+        });
     }
   },
 
@@ -436,36 +491,47 @@ export default {
 
       const resGeral = await database.query(queryGeral);
 
-      const alertasPorTipo = resultado.rows.map(row => ({
+      const alertasPorTipo = resultado.rows.map((row) => ({
         tipo: row.tipo,
         severidade: row.severidade,
         total_alertas: parseInt(row.total_alertas),
-        tempo_medio_minutos: (parseFloat(row.tempo_medio_segundos) / 60).toFixed(2),
-        tempo_minimo_minutos: (parseFloat(row.tempo_minimo_segundos) / 60).toFixed(2),
-        tempo_maximo_minutos: (parseFloat(row.tempo_maximo_segundos) / 60).toFixed(2)
+        tempo_medio_minutos: (
+          parseFloat(row.tempo_medio_segundos) / 60
+        ).toFixed(2),
+        tempo_minimo_minutos: (
+          parseFloat(row.tempo_minimo_segundos) / 60
+        ).toFixed(2),
+        tempo_maximo_minutos: (
+          parseFloat(row.tempo_maximo_segundos) / 60
+        ).toFixed(2),
       }));
 
       const geral = resGeral.rows[0];
-      const tempoMedioGeral = geral.tempo_medio_segundos 
+      const tempoMedioGeral = geral.tempo_medio_segundos
         ? (parseFloat(geral.tempo_medio_segundos) / 60).toFixed(2)
-        : 'N/A';
+        : "N/A";
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         tempo_medio_geral_minutos: tempoMedioGeral,
-        tempo_minimo_geral_minutos: geral.tempo_minimo_segundos 
+        tempo_minimo_geral_minutos: geral.tempo_minimo_segundos
           ? (parseFloat(geral.tempo_minimo_segundos) / 60).toFixed(2)
-          : 'N/A',
-        tempo_maximo_geral_minutos: geral.tempo_maximo_segundos 
+          : "N/A",
+        tempo_maximo_geral_minutos: geral.tempo_maximo_segundos
           ? (parseFloat(geral.tempo_maximo_segundos) / 60).toFixed(2)
-          : 'N/A',
+          : "N/A",
         total_alertas_resolvidos: parseInt(geral.total_alertas || 0),
-        alertas_por_tipo: alertasPorTipo
+        alertas_por_tipo: alertasPorTipo,
       });
     } catch (error) {
-      console.error('Erro ao obter tempo médio de alerta:', error);
-      return res.status(500).json({ erro: 'Erro ao obter tempo médio de alerta', detalhes: error.message });
+      console.error("Erro ao obter tempo médio de alerta:", error);
+      return res
+        .status(500)
+        .json({
+          erro: "Erro ao obter tempo médio de alerta",
+          detalhes: error.message,
+        });
     }
   },
 
@@ -521,29 +587,40 @@ export default {
       const cobertura = resCoberturaUsuarios.rows[0];
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         metricas_atuais: {
           cpu_percent: metricaAtual?.cpu_percent || 0,
           memoria_percent: metricaAtual?.memoria_percent || 0,
           tempo_resposta_ms: metricaAtual?.tempo_resposta_ms || 0,
-          disponibilidade_percent: metricaAtual?.disponibilidade_percent || 0
+          disponibilidade_percent: metricaAtual?.disponibilidade_percent || 0,
         },
         alertas: {
           abertos: parseInt(alertasInfo?.total || 0),
           criticos: parseInt(alertasInfo?.criticos || 0),
-          altos: parseInt(alertasInfo?.altos || 0)
+          altos: parseInt(alertasInfo?.altos || 0),
         },
-        tempo_medio_alerta_minutos: tempoMedioAlerta ? (tempoMedioAlerta / 60).toFixed(2) : 'N/A',
+        tempo_medio_alerta_minutos: tempoMedioAlerta
+          ? (tempoMedioAlerta / 60).toFixed(2)
+          : "N/A",
         cobertura_auditoria: {
           total_operacoes: parseInt(cobertura?.total || 0),
           operacoes_auditadas: parseInt(cobertura?.auditadas || 0),
-          percentual: cobertura?.total > 0 ? (parseInt(cobertura?.auditadas) / parseInt(cobertura?.total) * 100).toFixed(2) : 0
-        }
+          percentual:
+            cobertura?.total > 0
+              ? (
+                  (parseInt(cobertura?.auditadas) /
+                    parseInt(cobertura?.total)) *
+                  100
+                ).toFixed(2)
+              : 0,
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter dashboard:', error);
-      return res.status(500).json({ erro: 'Erro ao obter dashboard', detalhes: error.message });
+      console.error("Erro ao obter dashboard:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter dashboard", detalhes: error.message });
     }
-  }
+  },
 };

@@ -12,7 +12,7 @@ import performanceMetricsRouter from "./routes/performance-metrics.js";
 import performanceAlertsRouter from "./routes/performance-alerts.js";
 import performanceAnalyticsRouter from "./routes/performance-analytics.js";
 import eventLogsRouter from "./routes/event-logs.js";
-import reportScheduler from './services/reportScheduler.service.js';
+import reportScheduler from "./services/reportScheduler.service.js";
 
 // Importar middleware de auditoria e performance
 import { auditMiddleware } from "./middleware/audit.js";
@@ -71,18 +71,20 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`🔒 Sistema de auditoria ativado`);
-  
+
   // Iniciar serviço de monitoramento de performance
   try {
     PerformanceMonitorService.iniciar();
   } catch (err) {
-    console.error('Erro ao iniciar serviço de monitoramento:', err);
+    console.error("Erro ao iniciar serviço de monitoramento:", err);
   }
 
   // iniciar scheduler de relatórios após o servidor subir
   try {
-    reportScheduler.start().catch(err => console.error('Erro ao iniciar scheduler', err));
+    reportScheduler
+      .start()
+      .catch((err) => console.error("Erro ao iniciar scheduler", err));
   } catch (err) {
-    console.error('Erro ao iniciar scheduler', err);
+    console.error("Erro ao iniciar scheduler", err);
   }
 });

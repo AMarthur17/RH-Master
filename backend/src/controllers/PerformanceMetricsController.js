@@ -1,5 +1,5 @@
-import os from 'os';
-import db from '../db.js';
+import os from "os";
+import db from "../db.js";
 
 /**
  * Controller para métricas de performance da aplicação
@@ -23,7 +23,7 @@ export default {
       // Calcular CPU e Memória do sistema
       const cpus = os.cpus();
       const cpuCount = cpus.length;
-      
+
       // Uptime do servidor
       const uptimeSegundos = Math.floor(process.uptime());
       const uptimeHoras = Math.floor(uptimeSegundos / 3600);
@@ -31,7 +31,8 @@ export default {
 
       // Memória do processo Node.js
       const memoryUsage = process.memoryUsage();
-      const heapUsedPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+      const heapUsedPercent =
+        (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
 
       // Memória do sistema
       const totalMem = os.totalmem();
@@ -40,10 +41,12 @@ export default {
       const memPercent = (usedMem / totalMem) * 100;
 
       // Tempo médio de resposta
-      const avgResponseTime = requestCount > 0 ? totalResponseTime / requestCount : 0;
+      const avgResponseTime =
+        requestCount > 0 ? totalResponseTime / requestCount : 0;
 
       // Disponibilidade (100% se uptime > 1 hora, senão proporcional)
-      const disponibilidade = uptimeSegundos >= 3600 ? 100 : (uptimeSegundos / 3600) * 100;
+      const disponibilidade =
+        uptimeSegundos >= 3600 ? 100 : (uptimeSegundos / 3600) * 100;
 
       // Salvar métrica no banco
       const query = `
@@ -59,47 +62,50 @@ export default {
         avgResponseTime,
         disponibilidade,
         uptimeSegundos,
-        requestCount
+        requestCount,
       ]);
 
       // Resposta
       return res.json({
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         metricas: {
           cpu: {
             percent: cpuPercent,
-            cores: cpuCount
+            cores: cpuCount,
           },
           memoria: {
             process: {
               usado_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
               total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-              percent: heapUsedPercent.toFixed(2)
+              percent: heapUsedPercent.toFixed(2),
             },
             sistema: {
               total_mb: Math.round(totalMem / 1024 / 1024),
               usado_mb: Math.round(usedMem / 1024 / 1024),
               livre_mb: Math.round(freeMem / 1024 / 1024),
-              percent: memPercent.toFixed(2)
-            }
+              percent: memPercent.toFixed(2),
+            },
           },
           tempoResposta: {
             media_ms: avgResponseTime.toFixed(2),
-            minimo_ms: minResponseTime === Infinity ? 0 : minResponseTime.toFixed(2),
+            minimo_ms:
+              minResponseTime === Infinity ? 0 : minResponseTime.toFixed(2),
             maximo_ms: maxResponseTime.toFixed(2),
-            total_requisicoes: requestCount
+            total_requisicoes: requestCount,
           },
           disponibilidade: {
             percent: disponibilidade.toFixed(2),
             uptime: `${uptimeHoras}h ${uptimeMinutos}m`,
-            uptime_segundos: uptimeSegundos
-          }
-        }
+            uptime_segundos: uptimeSegundos,
+          },
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter métricas:', error);
-      return res.status(500).json({ erro: 'Erro ao obter métricas', detalhes: error.message });
+      console.error("Erro ao obter métricas:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter métricas", detalhes: error.message });
     }
   },
 
@@ -130,14 +136,16 @@ export default {
       const resultado = await database.query(query, [limite]);
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         total_registros: resultado.rows.length,
-        dados: resultado.rows
+        dados: resultado.rows,
       });
     } catch (error) {
-      console.error('Erro ao obter histórico:', error);
-      return res.status(500).json({ erro: 'Erro ao obter histórico', detalhes: error.message });
+      console.error("Erro ao obter histórico:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter histórico", detalhes: error.message });
     }
   },
 
@@ -174,33 +182,35 @@ export default {
       const stats = resultado.rows[0];
 
       return res.json({
-        status: 'ok',
+        status: "ok",
         periodo: `${horas} horas`,
         estatisticas: {
           cpu: {
             media: parseFloat(stats.cpu_media),
             maxima: parseFloat(stats.cpu_maxima),
-            minima: parseFloat(stats.cpu_minima)
+            minima: parseFloat(stats.cpu_minima),
           },
           memoria: {
             media: parseFloat(stats.memoria_media),
             maxima: parseFloat(stats.memoria_maxima),
-            minima: parseFloat(stats.memoria_minima)
+            minima: parseFloat(stats.memoria_minima),
           },
           tempoResposta: {
             media: parseFloat(stats.tempo_resposta_media),
             maximo: parseFloat(stats.tempo_resposta_maximo),
-            minimo: parseFloat(stats.tempo_resposta_minimo)
+            minimo: parseFloat(stats.tempo_resposta_minimo),
           },
           disponibilidade: {
-            media: parseFloat(stats.disponibilidade_media)
+            media: parseFloat(stats.disponibilidade_media),
           },
-          total_amostras: stats.total_amostras
-        }
+          total_amostras: stats.total_amostras,
+        },
       });
     } catch (error) {
-      console.error('Erro ao obter resumo:', error);
-      return res.status(500).json({ erro: 'Erro ao obter resumo', detalhes: error.message });
+      console.error("Erro ao obter resumo:", error);
+      return res
+        .status(500)
+        .json({ erro: "Erro ao obter resumo", detalhes: error.message });
     }
   },
 
@@ -213,9 +223,9 @@ export default {
 
     // Interceptar o método send original
     const originalSend = res.send;
-    res.send = function(data) {
+    res.send = function (data) {
       const responseTime = Date.now() - startTime;
-      
+
       requestCount++;
       totalResponseTime += responseTime;
       maxResponseTime = Math.max(maxResponseTime, responseTime);
@@ -250,7 +260,7 @@ export default {
       totalResponseTime,
       maxResponseTime,
       minResponseTime,
-      avgResponseTime: requestCount > 0 ? totalResponseTime / requestCount : 0
+      avgResponseTime: requestCount > 0 ? totalResponseTime / requestCount : 0,
     };
-  }
+  },
 };
