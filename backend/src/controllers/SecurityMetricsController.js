@@ -718,6 +718,122 @@ class SecurityMetricsController {
   }
 
   /**
+   * Calcular Cobertura de Logs de Observabilidade (CL)
+   * Fórmula: CL = (Nº de eventos críticos registrados / Nº total de eventos críticos definidos) × 100
+   * Requer a tabela `sensitive_events` no banco. Se a tabela não existir, retorna instrução para criá-la.
+   */
+  static async calcularCoberturaLogs(req, res) {
+    try {
+      const { from, to, categoria, nivelCriticidade } = req.query;
+
+      // Verificar existência de tabela sensitive_events e contar definidos
+      const dbClient = (await import("../db.js")).default;
+
+      // Construir cláusula de filtro para audit_logs
+      const whereAudit = [];
+      const valoresAudit = [];
+      let param = 1;
+      if (from) {
+        whereAudit.push(`al.data_hora >= $${param}`);
+        valoresAudit.push(from);
+        param++;
+      }
+      if (to) {
+        whereAudit.push(`al.data_hora <= $${param}`);
+        valoresAudit.push(to);
+        param++;
+      }
+
+      // Fallback: exigir sensitive_events
+      // Contar definidos
+      let totalDefinidos = 0;
+      try {
+        let whereDef = "WHERE ativo = TRUE";
+        const valoresDef = [];
+        if (categoria) {
+          whereDef += ` AND categoria = $1`;
+          valoresDef.push(categoria);
+        }
+        if (nivelCriticidade) {
+          whereDef += (valoresDef.length ? ` AND nivel_criticidade = $${valoresDef.length + 1}` : ` AND nivel_criticidade = $1`);
+          valoresDef.push(nivelCriticidade);
+        }
+
+        const qDef = `SELECT COUNT(*) as total FROM sensitive_events ${whereDef}`;
+        const rDef = await dbClient.query(qDef, valoresDef);
+        totalDefinidos = parseInt(rDef.rows[0].total || 0);
+      } catch (err) {
+        // Possível que a tabela não exista
+        return res.status(400).json({
+          error: "Tabela 'sensitive_events' não encontrada",
+          message: "Crie a tabela 'sensitive_events' e popule com as chaves de eventos sensíveis. Veja backend/tools/create_sensitive_events.sql",
+          details: err.message,
+        });
+      }
+
+      if (totalDefinidos === 0) {
+        return res.json({
+          metrica: "Cobertura de Logs de Observabilidade",
+          dados: { totalDefinidos: 0, totalRegistrados: 0, clPercentual: 0 },
+          interpretacao: "Nenhum evento sensível definido (sensitive_events vazio)",
+        });
+      }
+
+      // Contar quantos eventos definidos tiveram ao menos um registro no período
+      // Usamos DISTINCT se.event_key para contar eventos diferentes registrados
+      let whereAuditClause = '';
+      if (whereAudit.length) whereAuditClause = `AND ${whereAudit.join(' AND ')}`;
+
+      const valoresJoin = valoresAudit.slice();
+      // adicionar filtros por categoria/nivel usando sensitive_events
+      let filtroSe = 'WHERE se.ativo = TRUE';
+      const valoresSe = [];
+      if (categoria) {
+        filtroSe += ` AND se.categoria = $${valoresAudit.length + valoresSe.length + 1}`;
+        valoresSe.push(categoria);
+      }
+      if (nivelCriticidade) {
+        filtroSe += ` AND se.nivel_criticidade = $${valoresAudit.length + valoresSe.length + 1}`;
+        valoresSe.push(nivelCriticidade);
+      }
+
+      const qNum = `
+        SELECT COUNT(DISTINCT se.event_key) as total_registrados
+        FROM sensitive_events se
+        LEFT JOIN audit_logs al
+          ON UPPER(al.acao) = UPPER(se.event_key)
+          ${whereAuditClause}
+        ${filtroSe}
+      `;
+
+      const paramsNum = valoresAudit.concat(valoresSe);
+      const rNum = await dbClient.query(qNum, paramsNum);
+      const totalRegistrados = parseInt(rNum.rows[0].total_registrados || 0);
+
+      const clPercentual = ((totalRegistrados / totalDefinidos) * 100).toFixed(2);
+
+      let interpretacao = '';
+      const clFloat = parseFloat(clPercentual);
+      if (clFloat >= 100) interpretacao = 'Ideal: todos os eventos críticos estão sendo registrados.';
+      else if (clFloat >= 90) interpretacao = 'Boa cobertura, revisar eventos não registrados.';
+      else if (clFloat >= 70) interpretacao = 'Cobertura parcial; priorizar instrumentação.';
+      else interpretacao = 'Cobertura baixa; instrumentação urgente necessária.';
+
+      return res.json({
+        metrica: 'Cobertura de Logs de Observabilidade',
+        formula: "(Nº de eventos críticos registrados / Nº total de eventos críticos definidos) × 100",
+        periodo: { from: from || null, to: to || null },
+        dados: { totalDefinidos, totalRegistrados, clPercentual: parseFloat(clPercentual) },
+        interpretacao,
+        tipo: 'Quantitativa - percentual',
+      });
+    } catch (error) {
+      console.error('[SecurityMetricsController] Erro ao calcular cobertura de logs:', error);
+      return res.status(500).json({ error: 'Erro ao calcular cobertura de logs', details: error.message });
+    }
+  }
+
+  /**
    * Registrar ou atualizar uma regra de acesso
    */
   static async registrarRegraAcesso(req, res) {

@@ -135,6 +135,22 @@ router.get(
 );
 
 /**
+ * @route GET /security-metrics/log-coverage
+ * @desc Calcular a Cobertura de Logs de Observabilidade (CL)
+ * @access Administrador
+ * @query {string} from - Data inicial ISO (opcional)
+ * @query {string} to - Data final ISO (opcional)
+ * @query {string} categoria - Filtrar por categoria de evento sensível (opcional)
+ * @query {string} nivelCriticidade - Filtrar por nível de criticidade (opcional)
+ */
+router.get(
+  "/log-coverage",
+  autenticar,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.calcularCoberturaLogs
+);
+
+/**
  * @route POST /security-metrics/regras-acesso
  * @desc Registrar ou atualizar uma regra de acesso
  * @access Administrador
