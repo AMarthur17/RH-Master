@@ -381,3 +381,144 @@ CREATE INDEX IF NOT EXISTS idx_access_rules_perfil ON access_rules(perfil);
 CREATE INDEX IF NOT EXISTS idx_access_rules_rbac ON access_rules(tem_rbac);
 CREATE INDEX IF NOT EXISTS idx_access_rules_risco ON access_rules(nivel_risco);
 
+-- ==============================
+-- TABELAS DE PERFORMANCE METRICS - Task 1
+-- ==============================
+
+-- Tabela para armazenar as métricas de performance
+CREATE TABLE IF NOT EXISTS performance_metrics (
+  id SERIAL PRIMARY KEY,
+  cpu_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+  memoria_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+  tempo_resposta_ms NUMERIC(7,2) NOT NULL DEFAULT 0,
+  disponibilidade_percent NUMERIC(5,2) NOT NULL DEFAULT 100,
+  uptime_segundos INTEGER NOT NULL DEFAULT 0,
+  requisicoes_total INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índice para otimizar queries por data
+CREATE INDEX IF NOT EXISTS idx_performance_metrics_created_at 
+  ON performance_metrics(created_at DESC);
+
+COMMENT ON TABLE performance_metrics IS 'Armazena snapshots de métricas de performance da aplicação';
+COMMENT ON COLUMN performance_metrics.cpu_percent IS 'Percentual de uso de CPU (0-100%)';
+COMMENT ON COLUMN performance_metrics.memoria_percent IS 'Percentual de uso de memória heap do Node.js (0-100%)';
+COMMENT ON COLUMN performance_metrics.tempo_resposta_ms IS 'Tempo médio de resposta em milissegundos';
+COMMENT ON COLUMN performance_metrics.disponibilidade_percent IS 'Percentual de disponibilidade (0-100%)';
+COMMENT ON COLUMN performance_metrics.uptime_segundos IS 'Tempo de uptime em segundos';
+COMMENT ON COLUMN performance_metrics.requisicoes_total IS 'Total de requisições processadas até este ponto';
+
+-- ==============================
+-- TABELA DE ALERTAS DE PERFORMANCE - Task 2
+-- ==============================
+
+CREATE TABLE IF NOT EXISTS performance_alerts (
+  id SERIAL PRIMARY KEY,
+  tipo VARCHAR(50) NOT NULL, -- CPU_ELEVADA, MEMORIA_ELEVADA, TEMPO_RESPOSTA_ELEVADO, DISPONIBILIDADE_BAIXA
+  severidade VARCHAR(20) NOT NULL, -- BAIXA, MEDIA, ALTA, CRITICA
+  mensagem TEXT NOT NULL,
+  recurso VARCHAR(50), -- CPU, MEMORIA, TEMPO_RESPOSTA, DISPONIBILIDADE
+  valor NUMERIC(7,2), -- Valor atual que disparou o alerta
+  usuario_id INTEGER REFERENCES usuario(id) ON DELETE SET NULL, -- Usuário que detectou/reportou
+  status VARCHAR(30) DEFAULT 'ABERTO', -- ABERTO, EM_INVESTIGACAO, RESOLVIDO, FALSO_POSITIVO
+  notas TEXT, -- Notas sobre a resolução
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices para otimizar queries
+CREATE INDEX IF NOT EXISTS idx_performance_alerts_tipo ON performance_alerts(tipo);
+CREATE INDEX IF NOT EXISTS idx_performance_alerts_severidade ON performance_alerts(severidade);
+CREATE INDEX IF NOT EXISTS idx_performance_alerts_status ON performance_alerts(status);
+CREATE INDEX IF NOT EXISTS idx_performance_alerts_created_at ON performance_alerts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_performance_alerts_recurso ON performance_alerts(recurso);
+
+-- Comentários
+COMMENT ON TABLE performance_alerts IS 'Armazena alertas de degradação de performance da aplicação';
+COMMENT ON COLUMN performance_alerts.tipo IS 'Tipo de alerta disparado (CPU_ELEVADA, MEMORIA_ELEVADA, TEMPO_RESPOSTA_ELEVADO, etc)';
+COMMENT ON COLUMN performance_alerts.severidade IS 'Nível de severidade do alerta (BAIXA, MEDIA, ALTA, CRITICA)';
+COMMENT ON COLUMN performance_alerts.recurso IS 'Recurso afetado (CPU, MEMORIA, TEMPO_RESPOSTA, DISPONIBILIDADE)';
+COMMENT ON COLUMN performance_alerts.status IS 'Status do alerta (ABERTO, EM_INVESTIGACAO, RESOLVIDO, FALSO_POSITIVO)';
+
+-- ==============================
+-- TABELA DE EVENT LOGS - RNF-03
+-- Observabilidade do Sistema: Rastreamento Imutável de Eventos Críticos
+-- ==============================
+
+CREATE TABLE IF NOT EXISTS event_logs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  tipo_evento VARCHAR(100) NOT NULL, -- 'USUARIO_CRIADO', 'USUARIO_ATUALIZADO', 'USUARIO_DELETADO', 
+                                     -- 'FOLHA_CRIADA', 'FOLHA_ATUALIZADA', 'FOLHA_DELETADA',
+                                     -- 'FERIAS_CRIADAS', 'FERIAS_ATUALIZADAS', 'FERIAS_DELETADAS',
+                                     -- 'FERIAS_APROVADAS', 'FERIAS_REJEITADAS',
+                                     -- 'LOGIN', 'LOGOUT', 'ACESSO_NEGADO', 'ALERTA_CRITICO'
+  usuario_id INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  usuario_nome VARCHAR(100),
+  usuario_email VARCHAR(100),
+  endereco_ip VARCHAR(45),
+  user_agent TEXT,
+  detalhes JSONB, -- Informações detalhadas do evento
+  status VARCHAR(30) DEFAULT 'REGISTRADO', -- 'REGISTRADO', 'ALERTADO', 'RESOLVIDO'
+  nivel_criticidade VARCHAR(20) DEFAULT 'NORMAL', -- 'NORMAL', 'IMPORTANTE', 'CRITICO'
+  hash_integridade VARCHAR(64), -- SHA-256 para garantir imutabilidade
+  metadata JSONB -- Dados adicionais contextuais
+);
+
+-- Índices para otimizar queries de event logs
+CREATE INDEX IF NOT EXISTS idx_event_logs_timestamp ON event_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_event_logs_tipo_evento ON event_logs(tipo_evento);
+CREATE INDEX IF NOT EXISTS idx_event_logs_usuario_id ON event_logs(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_event_logs_nivel_criticidade ON event_logs(nivel_criticidade);
+CREATE INDEX IF NOT EXISTS idx_event_logs_status ON event_logs(status);
+CREATE INDEX IF NOT EXISTS idx_event_logs_composite ON event_logs(tipo_evento, nivel_criticidade, timestamp DESC);
+
+-- Trigger para calcular hash de integridade para event_logs
+CREATE OR REPLACE FUNCTION calculate_event_hash()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.hash_integridade := encode(
+    digest(
+      COALESCE(NEW.usuario_id::text, '') || '|' ||
+      COALESCE(NEW.tipo_evento, '') || '|' ||
+      COALESCE(NEW.timestamp::text, '') || '|' ||
+      COALESCE(NEW.detalhes::text, '') || '|' ||
+      COALESCE(NEW.nivel_criticidade, ''),
+      'sha256'
+    ),
+    'hex'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER event_logs_hash_trigger
+  BEFORE INSERT ON event_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION calculate_event_hash();
+
+-- Trigger para impedir UPDATE e DELETE em event_logs (imutabilidade)
+CREATE OR REPLACE FUNCTION prevent_event_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Event logs são imutáveis e não podem ser modificados ou excluídos';
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_event_update
+  BEFORE UPDATE ON event_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_event_modification();
+
+CREATE TRIGGER prevent_event_delete
+  BEFORE DELETE ON event_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_event_modification();
+
+COMMENT ON TABLE event_logs IS 'Rastreamento imutável de eventos críticos do sistema para observabilidade';
+COMMENT ON COLUMN event_logs.tipo_evento IS 'Classificação do evento (ex: USUARIO_CRIADO, FOLHA_DELETADA, FERIAS_APROVADAS)';
+COMMENT ON COLUMN event_logs.timestamp IS 'Hora exata do evento';
+COMMENT ON COLUMN event_logs.nivel_criticidade IS 'NORMAL: operações rotineiras, IMPORTANTE: alterações significativas, CRITICO: ações sensíveis';
+COMMENT ON COLUMN event_logs.hash_integridade IS 'SHA-256 para verificar integridade e detectar manipulações';
