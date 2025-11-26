@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Métricas de Segurança</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #results {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .metric-card {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .metric-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Teste de Métricas de Segurança - RH Master</h1>
+    
+    <div class="container">
+        <h2>1. Autenticação</h2>
+        <div>
+            <label>Email: <input type="email" id="email" value="kevin@gmail.com" style="width: 250px; padding: 8px;"></label>
+            <label>Senha: <input type="password" id="senha" value="senha123" style="width: 200px; padding: 8px;"></label>
+        </div>
+        <button onclick="fazerLogin()">🔐 Fazer Login</button>
+        <p id="loginStatus"></p>
+    </div>
+
+    <div class="container">
+        <h2>2. Testes de Métricas</h2>
+        <button onclick="testarTaxaVazamento()" id="btnTaxaVazamento" disabled>📊 Taxa de Vazamento de Dados</button>
+        <button onclick="testarCoberturaAcesso()" id="btnCobertura" disabled>🔐 Cobertura de Regras de Acesso</button>
+        <button onclick="testarEstatisticas()" id="btnEstatisticas" disabled>📈 Estatísticas Gerais</button>
+        <button onclick="testarTodos()" id="btnTodos" disabled>🚀 Testar Todos</button>
+    </div>
+
+    <div class="container">
+        <h2>3. Resultados</h2>
+        <div id="results">Aguardando testes...</div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:3001';
+        let token = null;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                info: '#17a2b8',
+                warning: '#ffc107'
+            };
+            results.innerHTML += `<span style="color: ${colors[type]}">${message}</span>\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function habilitarBotoes(habilitar) {
+            document.getElementById('btnTaxaVazamento').disabled = !habilitar;
+            document.getElementById('btnCobertura').disabled = !habilitar;
+            document.getElementById('btnEstatisticas').disabled = !habilitar;
+            document.getElementById('btnTodos').disabled = !habilitar;
+        }
+
+        async function fazerLogin() {
+            clearResults();
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const statusEl = document.getElementById('loginStatus');
+
+            log('🔐 Fazendo login...', 'info');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/usuario/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, senha }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                token = data.token;
+
+                log(`✅ Login realizado com sucesso!`, 'success');
+                log(`👤 Usuário: ${data.usuario.nome}`, 'info');
+                log(`🎫 Token obtido e salvo\n`, 'info');
+
+                statusEl.innerHTML = `<span class="success">✅ Autenticado como: ${data.usuario.nome}</span>`;
+                habilitarBotoes(true);
+
+            } catch (error) {
+                log(`❌ Erro no login: ${error.message}`, 'error');
+                statusEl.innerHTML = `<span class="error">❌ Falha na autenticação</span>`;
+                habilitarBotoes(false);
+            }
+        }
+
+        async function testarTaxaVazamento() {
+            log('\n═══════════════════════════════════════════════════════════', 'info');
+            log('   TESTE: TAXA DE INCIDENTES DE VAZAMENTO DE DADOS', 'info');
+            log('═══════════════════════════════════════════════════════════\n', 'info');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/security-metrics/taxa-vazamento`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                log(`📊 Métrica: ${data.metrica}`, 'info');
+                log(`📐 Fórmula: ${data.formula}\n`, 'info');
+                
+                log(`📈 DADOS:`, 'success');
+                log(`   Total de Transações: ${data.dados.totalTransacoes}`, 'info');
+                log(`   Total de Incidentes: ${data.dados.totalIncidentes}`, 'info');
+                log(`   Taxa de Proteção: ${data.dados.taxaProtecao}%`, 'success');
+                log(`   Proporção de Incidentes: ${data.dados.proporcaoIncidentes}\n`, 'warning');
+                
+                log(`💡 Interpretação: ${data.interpretacao}\n`, 'success');
+
+                if (data.incidentesRecentes && data.incidentesRecentes.length > 0) {
+                    log(`🚨 Incidentes Recentes (${data.incidentesRecentes.length}):`, 'warning');
+                    data.incidentesRecentes.slice(0, 3).forEach((inc, i) => {
+                        log(`   ${i + 1}. [${inc.severidade}] ${inc.tipo}`, 'warning');
+                        log(`      Status: ${inc.status}`, 'info');
+                        log(`      Descrição: ${inc.descricao.substring(0, 60)}...`, 'info');
+                    });
+                }
+
+                log('\n✅ Teste concluído com sucesso!\n', 'success');
+
+            } catch (error) {
+                log(`\n❌ Erro no teste: ${error.message}\n`, 'error');
+            }
+        }
+
+        async function testarCoberturaAcesso() {
+            log('\n═══════════════════════════════════════════════════════════', 'info');
+            log('   TESTE: COBERTURA DE REGRAS DE ACESSO POR PERFIL', 'info');
+            log('═══════════════════════════════════════════════════════════\n', 'info');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/security-metrics/cobertura-acesso`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                log(`📊 Métrica: ${data.metrica}`, 'info');
+                log(`📐 Fórmula: ${data.formula}\n`, 'info');
+                
+                log(`📈 DADOS:`, 'success');
+                log(`   Total de Funcionalidades: ${data.dados.totalFuncionalidades}`, 'info');
+                log(`   Com RBAC: ${data.dados.totalComRBAC}`, 'success');
+                log(`   Sem RBAC: ${data.dados.totalSemRBAC}`, 'warning');
+                log(`   Cobertura: ${data.dados.coberturaPercentual}%\n`, 'success');
+                
+                log(`💡 Interpretação: ${data.interpretacao}\n`, 'success');
+
+                if (data.estatisticasPorPerfil && data.estatisticasPorPerfil.length > 0) {
+                    log(`👥 Estatísticas por Perfil:`, 'info');
+                    data.estatisticasPorPerfil.forEach((perfil) => {
+                        const cor = parseFloat(perfil.cobertura_percentual) >= 90 ? 'success' : 
+                                   parseFloat(perfil.cobertura_percentual) >= 70 ? 'warning' : 'error';
+                        log(`   ${perfil.perfil}: ${perfil.com_rbac}/${perfil.total_funcionalidades} (${perfil.cobertura_percentual}%)`, cor);
+                    });
+                    log('', 'info');
+                }
+
+                if (data.funcionalidadesSemRBAC && data.funcionalidadesSemRBAC.length > 0) {
+                    log(`❌ Funcionalidades SEM RBAC (${data.funcionalidadesSemRBAC.length}):`, 'warning');
+                    data.funcionalidadesSemRBAC.slice(0, 5).forEach((func, i) => {
+                        log(`   ${i + 1}. [${func.perfil}] ${func.funcionalidade}`, 'warning');
+                        log(`      Endpoint: ${func.endpoint || 'N/A'} | Risco: ${func.nivel_risco}`, 'info');
+                    });
+                }
+
+                log('\n✅ Teste concluído com sucesso!\n', 'success');
+
+            } catch (error) {
+                log(`\n❌ Erro no teste: ${error.message}\n`, 'error');
+            }
+        }
+
+        async function testarEstatisticas() {
+            log('\n═══════════════════════════════════════════════════════════', 'info');
+            log('   TESTE: ESTATÍSTICAS GERAIS DE SEGURANÇA', 'info');
+            log('═══════════════════════════════════════════════════════════\n', 'info');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/security-metrics/estatisticas`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                log('📊 INCIDENTES POR TIPO:', 'info');
+                if (data.porTipo && data.porTipo.length > 0) {
+                    data.porTipo.forEach((item) => {
+                        log(`   ${item.tipo}: ${item.quantidade}`, 'info');
+                    });
+                } else {
+                    log('   Nenhum incidente registrado', 'success');
+                }
+
+                log('\n🎯 INCIDENTES POR SEVERIDADE:', 'info');
+                if (data.porSeveridade && data.porSeveridade.length > 0) {
+                    data.porSeveridade.forEach((item) => {
+                        const cor = item.severidade === 'CRITICA' || item.severidade === 'ALTA' ? 'error' : 
+                                   item.severidade === 'MEDIA' ? 'warning' : 'success';
+                        log(`   ${item.severidade}: ${item.quantidade}`, cor);
+                    });
+                }
+
+                log('\n📋 INCIDENTES POR STATUS:', 'info');
+                if (data.porStatus && data.porStatus.length > 0) {
+                    data.porStatus.forEach((item) => {
+                        const cor = item.status === 'RESOLVIDO' ? 'success' : 
+                                   item.status === 'FALSO_POSITIVO' ? 'info' : 'warning';
+                        log(`   ${item.status}: ${item.quantidade}`, cor);
+                    });
+                }
+
+                log(`\n📊 Total de Registros Afetados: ${data.totalRegistrosAfetados}`, 'warning');
+                log(`⏱️  Tempo Médio de Resolução: ${data.tempoMedioResolucaoHoras} horas`, 'info');
+
+                log('\n✅ Teste concluído com sucesso!\n', 'success');
+
+            } catch (error) {
+                log(`\n❌ Erro no teste: ${error.message}\n`, 'error');
+            }
+        }
+
+        async function testarTodos() {
+            clearResults();
+            log('🚀 Iniciando todos os testes...\n', 'info');
+            
+            await testarTaxaVazamento();
+            await testarCoberturaAcesso();
+            await testarEstatisticas();
+            
+            log('\n═══════════════════════════════════════════════════════════', 'success');
+            log('✅ TODOS OS TESTES CONCLUÍDOS COM SUCESSO!', 'success');
+            log('═══════════════════════════════════════════════════════════', 'success');
+        }
+    </script>
+</body>
+</html>

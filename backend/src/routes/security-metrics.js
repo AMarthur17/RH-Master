@@ -1,6 +1,6 @@
 import express from "express";
 import SecurityMetricsController from "../controllers/SecurityMetricsController.js";
-import { verificarToken } from "../middleware/auth.js";
+import { autenticar } from "../middleware/auth.js";
 import { verificarPermissao } from "../middleware/verificarPermissao.js";
 
 const router = express.Router();
@@ -20,7 +20,7 @@ const router = express.Router();
  */
 router.get(
   "/taxa-vazamento",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.calcularTaxaVazamento
 );
@@ -38,7 +38,7 @@ router.get(
  */
 router.post(
   "/incidentes",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.registrarIncidente
 );
@@ -57,7 +57,7 @@ router.post(
  */
 router.get(
   "/incidentes",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.listarIncidentes
 );
@@ -72,7 +72,7 @@ router.get(
  */
 router.put(
   "/incidentes/:id",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.atualizarIncidente
 );
@@ -86,7 +86,7 @@ router.put(
  */
 router.get(
   "/estatisticas",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.obterEstatisticas
 );
@@ -100,7 +100,7 @@ router.get(
  */
 router.get(
   "/detectar-vazamentos",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.detectarVazamentos
 );
@@ -114,7 +114,7 @@ router.get(
  */
 router.get(
   "/cobertura-acesso",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.calcularCoberturaAcesso
 );
@@ -133,7 +133,7 @@ router.get(
  */
 router.post(
   "/regras-acesso",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.registrarRegraAcesso
 );
@@ -150,7 +150,7 @@ router.post(
  */
 router.get(
   "/regras-acesso",
-  verificarToken,
+  autenticar,
   verificarPermissao(["Administrador"]),
   SecurityMetricsController.listarRegrasAcesso
 );
