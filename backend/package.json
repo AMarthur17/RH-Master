@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "jest": "^29.6.1",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "supertest": "^6.4.3"
   },
   "engines": {
     "node": ">=18"

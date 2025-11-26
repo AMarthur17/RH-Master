@@ -610,6 +610,114 @@ class SecurityMetricsController {
   }
 
   /**
+   * Calcular Taxa de Autenticação e Controle de Acesso Correto (TAC)
+   * Fórmula: TAC = (Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100
+   * Implementação prática: considera acessos registrados em `audit_logs` que correspondem
+   * a funcionalidades do `access_rules` para um `perfil` específico e que possuem `tem_rbac = TRUE`.
+   * Denominador = total de requisições para essas funcionalidades (legítimas solicitadas)
+   * Numerador = requisições com `resultado = 'SUCESSO'` (autorizadas corretamente)
+   */
+  static async calcularTAC(req, res) {
+    try {
+      const { perfil, dataInicio, dataFim } = req.query;
+
+      let whereAudit = "WHERE 1=1";
+      const valores = [];
+      let paramCount = 1;
+
+      if (dataInicio) {
+        whereAudit += ` AND al.data_hora >= $${paramCount}`;
+        valores.push(dataInicio);
+        paramCount++;
+      }
+
+      if (dataFim) {
+        whereAudit += ` AND al.data_hora <= $${paramCount}`;
+        valores.push(dataFim);
+        paramCount++;
+      }
+
+      let perfilClause = "";
+      if (perfil) {
+        perfilClause = ` AND ar.perfil = $${paramCount}`;
+        valores.push(perfil);
+        paramCount++;
+      }
+
+      // Denominador: total de requisições em audit_logs que correspondem a regras de acesso
+      // para o perfil (somente funcionalidades que têm RBAC)
+      const queryTotal = `
+        SELECT COUNT(*) as total
+        FROM audit_logs al
+        JOIN access_rules ar
+          ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
+          AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
+        ${whereAudit} AND ar.tem_rbac = TRUE ${perfilClause}
+      `;
+
+      const resultTotal = await db.query(queryTotal, valores);
+      const totalSolicitacoes = parseInt(resultTotal.rows[0].total || 0);
+
+      // Numerador: acessos autorizados corretamente (resultado = 'SUCESSO')
+      const queryAutorizados = `
+        SELECT COUNT(*) as total
+        FROM audit_logs al
+        JOIN access_rules ar
+          ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
+          AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
+        ${whereAudit} AND ar.tem_rbac = TRUE ${perfilClause} AND UPPER(al.resultado) = 'SUCESSO'
+      `;
+
+      const resultAutorizados = await db.query(queryAutorizados, valores);
+      const totalAutorizados = parseInt(resultAutorizados.rows[0].total || 0);
+
+      let tac = 0;
+      let interpretacao = "";
+
+      if (totalSolicitacoes === 0) {
+        tac = 0;
+        interpretacao = "Não há solicitações legítimas registradas para o período/perfil informado.";
+      } else {
+        tac = ((totalAutorizados / totalSolicitacoes) * 100).toFixed(2);
+
+        const tacFloat = parseFloat(tac);
+        if (tacFloat >= 99) {
+          interpretacao = "Excelente — controle de acesso funcionando corretamente.";
+        } else if (tacFloat >= 95) {
+          interpretacao = "Bom — poucas negações indevidas.";
+        } else if (tacFloat >= 90) {
+          interpretacao = "Atenção — alguns acessos legítimos estão sendo negados.";
+        } else {
+          interpretacao = "Problema — falhas relevantes no controle de acesso para o perfil.";
+        }
+      }
+
+      return res.json({
+        metrica: "Taxa de Autenticação e Controle de Acesso Correto (TAC)",
+        formula: "(Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100",
+        filtros: {
+          perfil: perfil || "Todos",
+          dataInicio: dataInicio || null,
+          dataFim: dataFim || null,
+        },
+        dados: {
+          totalSolicitacoes,
+          totalAutorizados,
+          tacPercentual: parseFloat(tac),
+        },
+        interpretacao,
+        tipo: "Quantitativa - percentual",
+      });
+    } catch (error) {
+      console.error("[SecurityMetricsController] Erro ao calcular TAC:", error);
+      return res.status(500).json({
+        error: "Erro ao calcular TAC",
+        details: error.message,
+      });
+    }
+  }
+
+  /**
    * Registrar ou atualizar uma regra de acesso
    */
   static async registrarRegraAcesso(req, res) {

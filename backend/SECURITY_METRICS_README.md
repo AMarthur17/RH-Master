@@ -1,3 +1,33 @@
+# Métricas de Segurança - TAC
+
+## Taxa de Autenticação e Controle de Acesso Correto (TAC)
+
+- Fórmula: `TAC = (Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100`
+- Tipo: Quantitativa — percentual
+
+### Definição operacional
+Esta métrica mede a eficácia do controle de acesso (autenticação + autorização por perfil). Para fins práticos, a implementação atual considera:
+
+- Denominador (Nº de acessos legítimos solicitados): entradas em `audit_logs` que correspondem a `access_rules` onde `tem_rbac = TRUE` (ou seja, funcionalidades com RBAC implementado). Filtragem por `perfil` e intervalo de datas é suportada.
+- Numerador (Nº de acessos autorizados corretamente): subconjunto das entradas acima cujo campo `resultado` é `SUCESSO`.
+
+### Interpretação
+
+- Valores próximos de 100%: bom funcionamento do controle de acesso.
+- 95–99%: aceitável, possíveis negações indevidas em raros casos.
+- 90–95%: atenção, revisar regras e logs para identificar causas.
+- <90%: investigação urgente — configurações de permissão ou problemas de autenticação podem estar bloqueando acessos legítimos.
+
+### Limitações e observações
+
+- A definição de "legítimo" aqui é operacional (requisitions matched to access_rules); casos onde o `access_rules` está incompleto podem afetar o denominador.
+- A métrica não detecta autorizações indevidas (ex.: um usuário sem permissão que obteve sucesso). Para isso, recomenda-se implementar uma métrica complementar que conte `SUCESSO` em ações para perfis sem permissão.
+
+### Endpoint
+
+- `GET /security-metrics/tac`
+  - Query params: `perfil` (opcional), `dataInicio` (opcional), `dataFim` (opcional)
+  - Retorna JSON com `totalSolicitacoes`, `totalAutorizados`, `tacPercentual`, `interpretacao`.
 # Métricas de Segurança - Taxa de Incidentes de Vazamento de Dados
 
 ## 📊 Visão Geral
