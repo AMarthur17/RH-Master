@@ -120,6 +120,36 @@ router.get(
 );
 
 /**
+ * @route GET /security-metrics/tac
+ * @desc Calcular TAC - Taxa de Autenticação e Controle de Acesso Correto
+ * @access Administrador
+ * @query {string} perfil - Filtrar por perfil (opcional)
+ * @query {string} dataInicio - Data inicial do período (opcional)
+ * @query {string} dataFim - Data final do período (opcional)
+ */
+router.get(
+  "/tac",
+  autenticar,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.calcularTAC
+);
+
+/**
+ * @route GET /security-metrics/cl
+ * @desc Calcular CL - Cobertura de Logs de Observabilidade
+ * @access Administrador
+ * @query {string} perfil - Filtrar por perfil (opcional)
+ * @query {string} dataInicio - Data inicial do período (opcional)
+ * @query {string} dataFim - Data final do período (opcional)
+ */
+router.get(
+  "/cl",
+  autenticar,
+  verificarPermissao(["Administrador"]),
+  SecurityMetricsController.calcularCL
+);
+
+/**
  * @route POST /security-metrics/regras-acesso
  * @desc Registrar ou atualizar uma regra de acesso
  * @access Administrador
