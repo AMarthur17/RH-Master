@@ -121,7 +121,7 @@ router.get(
 
 /**
  * @route GET /security-metrics/tac
- * @desc Calcular TAC - Taxa de Autenticação e Controle de Acesso Correto
+ * @desc Calcular a Taxa de Autenticação e Controle de Acesso Correto (TAC)
  * @access Administrador
  * @query {string} perfil - Filtrar por perfil (opcional)
  * @query {string} dataInicio - Data inicial do período (opcional)
@@ -135,18 +135,19 @@ router.get(
 );
 
 /**
- * @route GET /security-metrics/cl
- * @desc Calcular CL - Cobertura de Logs de Observabilidade
+ * @route GET /security-metrics/log-coverage
+ * @desc Calcular a Cobertura de Logs de Observabilidade (CL)
  * @access Administrador
- * @query {string} perfil - Filtrar por perfil (opcional)
- * @query {string} dataInicio - Data inicial do período (opcional)
- * @query {string} dataFim - Data final do período (opcional)
+ * @query {string} from - Data inicial ISO (opcional)
+ * @query {string} to - Data final ISO (opcional)
+ * @query {string} categoria - Filtrar por categoria de evento sensível (opcional)
+ * @query {string} nivelCriticidade - Filtrar por nível de criticidade (opcional)
  */
 router.get(
-  "/cl",
+  "/log-coverage",
   autenticar,
   verificarPermissao(["Administrador"]),
-  SecurityMetricsController.calcularCL
+  SecurityMetricsController.calcularCoberturaLogs
 );
 
 /**

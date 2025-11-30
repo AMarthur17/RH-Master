@@ -610,201 +610,226 @@ class SecurityMetricsController {
   }
 
   /**
-   * Calcular a métrica TAC - Taxa de Autenticação e Controle de Acesso Correto
-   * Fórmula: (Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100
-   * Usa `audit_logs` + `access_rules` (apenas regras com tem_rbac = TRUE)
+   * Calcular Taxa de Autenticação e Controle de Acesso Correto (TAC)
+   * Fórmula: TAC = (Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100
+   * Implementação prática: considera acessos registrados em `audit_logs` que correspondem
+   * a funcionalidades do `access_rules` para um `perfil` específico e que possuem `tem_rbac = TRUE`.
+   * Denominador = total de requisições para essas funcionalidades (legítimas solicitadas)
+   * Numerador = requisições com `resultado = 'SUCESSO'` (autorizadas corretamente)
    */
   static async calcularTAC(req, res) {
     try {
       const { perfil, dataInicio, dataFim } = req.query;
 
-      let whereClause = "WHERE 1=1";
+      let whereAudit = "WHERE 1=1";
       const valores = [];
       let paramCount = 1;
 
       if (dataInicio) {
-        whereClause += ` AND al.data_hora >= $${paramCount}`;
+        whereAudit += ` AND al.data_hora >= $${paramCount}`;
         valores.push(dataInicio);
         paramCount++;
       }
 
       if (dataFim) {
-        whereClause += ` AND al.data_hora <= $${paramCount}`;
+        whereAudit += ` AND al.data_hora <= $${paramCount}`;
         valores.push(dataFim);
         paramCount++;
       }
 
+      let perfilClause = "";
       if (perfil) {
-        whereClause += ` AND ar.perfil = $${paramCount}`;
+        perfilClause = ` AND ar.perfil = $${paramCount}`;
         valores.push(perfil);
         paramCount++;
       }
 
-      // Condição de junção: combinar endpoint/metodo (aceita regras com endpoint/metodo vazios)
-      const joinOn = `
-        ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
-        AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
-      `;
-
-      // Denominador: todas as solicitações a funcionalidades com RBAC
-      const queryDenominador = `
+      // Denominador: total de requisições em audit_logs que correspondem a regras de acesso
+      // para o perfil (somente funcionalidades que têm RBAC)
+      const queryTotal = `
         SELECT COUNT(*) as total
         FROM audit_logs al
         JOIN access_rules ar
-        ${joinOn}
-        ${whereClause} AND ar.tem_rbac = TRUE
+          ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
+          AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
+        ${whereAudit} AND ar.tem_rbac = TRUE ${perfilClause}
       `;
 
-      // Numerador: aquelas cujo resultado foi SUCESSO
-      const queryNumerador = `
+      const resultTotal = await db.query(queryTotal, valores);
+      const totalSolicitacoes = parseInt(resultTotal.rows[0].total || 0);
+
+      // Numerador: acessos autorizados corretamente (resultado = 'SUCESSO')
+      const queryAutorizados = `
         SELECT COUNT(*) as total
         FROM audit_logs al
         JOIN access_rules ar
-        ${joinOn}
-        ${whereClause} AND ar.tem_rbac = TRUE AND UPPER(al.resultado) = 'SUCESSO'
+          ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
+          AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
+        ${whereAudit} AND ar.tem_rbac = TRUE ${perfilClause} AND UPPER(al.resultado) = 'SUCESSO'
       `;
 
-      const resultDen = await db.query(queryDenominador, valores);
-      const resultNum = await db.query(queryNumerador, valores);
-
-      const totalSolicitacoes = parseInt(resultDen.rows[0].total || 0);
-      const totalAutorizados = parseInt(resultNum.rows[0].total || 0);
+      const resultAutorizados = await db.query(queryAutorizados, valores);
+      const totalAutorizados = parseInt(resultAutorizados.rows[0].total || 0);
 
       let tac = 0;
-      let interpretacao = '';
+      let interpretacao = "";
 
       if (totalSolicitacoes === 0) {
-        tac = 100.0;
-        interpretacao = 'Nenhuma solicitação encontrada para o período/perfil; retornando 100% por convenção.';
+        tac = 0;
+        interpretacao = "Não há solicitações legítimas registradas para o período/perfil informado.";
       } else {
         tac = ((totalAutorizados / totalSolicitacoes) * 100).toFixed(2);
 
-        const tacNum = parseFloat(tac);
-        if (tacNum >= 99) {
-          interpretacao = 'Excelente — controle de acesso funcionando corretamente.';
-        } else if (tacNum >= 95) {
-          interpretacao = 'Bom — pequenas revisões de permissão podem melhorar.';
-        } else if (tacNum >= 90) {
-          interpretacao = 'Atenção — possíveis problemas de configuração/permissões.';
+        const tacFloat = parseFloat(tac);
+        if (tacFloat >= 99) {
+          interpretacao = "Excelente — controle de acesso funcionando corretamente.";
+        } else if (tacFloat >= 95) {
+          interpretacao = "Bom — poucas negações indevidas.";
+        } else if (tacFloat >= 90) {
+          interpretacao = "Atenção — alguns acessos legítimos estão sendo negados.";
         } else {
-          interpretacao = 'Crítico — investigação urgente recomendada.';
+          interpretacao = "Problema — falhas relevantes no controle de acesso para o perfil.";
         }
       }
 
       return res.json({
-        metrica: 'Taxa de Autenticação e Controle de Acesso Correto (TAC)',
+        metrica: "Taxa de Autenticação e Controle de Acesso Correto (TAC)",
         formula: "(Nº de acessos autorizados corretamente / Nº de acessos legítimos solicitados) × 100",
-        filtros: { perfil: perfil || 'Todos', dataInicio: dataInicio || null, dataFim: dataFim || null },
+        filtros: {
+          perfil: perfil || "Todos",
+          dataInicio: dataInicio || null,
+          dataFim: dataFim || null,
+        },
         dados: {
           totalSolicitacoes,
           totalAutorizados,
           tacPercentual: parseFloat(tac),
         },
         interpretacao,
-        tipo: 'Quantitativa - percentual',
+        tipo: "Quantitativa - percentual",
       });
     } catch (error) {
-      console.error('[SecurityMetricsController] Erro ao calcular TAC:', error);
-      return res.status(500).json({ error: 'Erro ao calcular métrica TAC', details: error.message });
+      console.error("[SecurityMetricsController] Erro ao calcular TAC:", error);
+      return res.status(500).json({
+        error: "Erro ao calcular TAC",
+        details: error.message,
+      });
     }
   }
 
   /**
-   * Calcular a métrica CL - Cobertura de Logs de Observabilidade
-   * Fórmula: (Nº de eventos críticos registrados / Nº total de eventos críticos definidos) × 100
-   * Implementação simples: usa `access_rules` (nivel_risco = 'CRITICO') como lista de eventos críticos definidos
-   * e verifica quantas dessas funcionalidades tiveram ao menos um registro em `audit_logs` no período.
+   * Calcular Cobertura de Logs de Observabilidade (CL)
+   * Fórmula: CL = (Nº de eventos críticos registrados / Nº total de eventos críticos definidos) × 100
+   * Requer a tabela `sensitive_events` no banco. Se a tabela não existir, retorna instrução para criá-la.
    */
-  static async calcularCL(req, res) {
+  static async calcularCoberturaLogs(req, res) {
     try {
-      const { perfil, dataInicio, dataFim } = req.query;
+      const { from, to, categoria, nivelCriticidade } = req.query;
 
-      const valores = [];
-      let paramCount = 1;
+      // Verificar existência de tabela sensitive_events e contar definidos
+      const dbClient = (await import("../db.js")).default;
 
-      // Filtro de período para logs
-      let filtroData = "";
-      if (dataInicio) {
-        filtroData += ` AND al.data_hora >= $${paramCount}`;
-        valores.push(dataInicio);
-        paramCount++;
+      // Construir cláusula de filtro para audit_logs
+      const whereAudit = [];
+      const valoresAudit = [];
+      let param = 1;
+      if (from) {
+        whereAudit.push(`al.data_hora >= $${param}`);
+        valoresAudit.push(from);
+        param++;
       }
-      if (dataFim) {
-        filtroData += ` AND al.data_hora <= $${paramCount}`;
-        valores.push(dataFim);
-        paramCount++;
-      }
-
-      // Filtro por perfil (aplica-se às regras definidas)
-      let filtroPerfil = "";
-      if (perfil) {
-        filtroPerfil = ` AND perfil = $${paramCount}`;
-        valores.push(perfil);
-        paramCount++;
+      if (to) {
+        whereAudit.push(`al.data_hora <= $${param}`);
+        valoresAudit.push(to);
+        param++;
       }
 
-      // Total de eventos críticos definidos (por funcionalidade)
-      const queryTotalDefinidos = `
-        SELECT COUNT(*) as total
-        FROM access_rules
-        WHERE nivel_risco = 'CRITICO' ${filtroPerfil}
-      `;
+      // Fallback: exigir sensitive_events
+      // Contar definidos
+      let totalDefinidos = 0;
+      try {
+        let whereDef = "WHERE ativo = TRUE";
+        const valoresDef = [];
+        if (categoria) {
+          whereDef += ` AND categoria = $1`;
+          valoresDef.push(categoria);
+        }
+        if (nivelCriticidade) {
+          whereDef += (valoresDef.length ? ` AND nivel_criticidade = $${valoresDef.length + 1}` : ` AND nivel_criticidade = $1`);
+          valoresDef.push(nivelCriticidade);
+        }
 
-      // Quantas dessas funcionalidades tiveram ao menos 1 log em audit_logs no período
-      const joinOn = `
-        ON (al.endpoint = ar.endpoint OR ar.endpoint IS NULL OR ar.endpoint = '')
-        AND (al.metodo = ar.metodo OR ar.metodo IS NULL OR ar.metodo = '')
-      `;
-
-      const queryCobertos = `
-        SELECT COUNT(DISTINCT ar.funcionalidade) as total
-        FROM access_rules ar
-        JOIN audit_logs al
-        ${joinOn}
-        WHERE ar.nivel_risco = 'CRITICO' ${filtroPerfil} ${filtroData}
-      `;
-
-      const resultTotal = await db.query(queryTotalDefinidos, valores.slice(0, paramCount - 1));
-      const resultCobertos = await db.query(queryCobertos, valores);
-
-      const totalDefinidos = parseInt(resultTotal.rows[0].total || 0);
-      const totalCobertos = parseInt(resultCobertos.rows[0].total || 0);
-
-      let cl = 0;
-      let interpretacao = '';
+        const qDef = `SELECT COUNT(*) as total FROM sensitive_events ${whereDef}`;
+        const rDef = await dbClient.query(qDef, valoresDef);
+        totalDefinidos = parseInt(rDef.rows[0].total || 0);
+      } catch (err) {
+        // Possível que a tabela não exista
+        return res.status(400).json({
+          error: "Tabela 'sensitive_events' não encontrada",
+          message: "Crie a tabela 'sensitive_events' e popule com as chaves de eventos sensíveis. Veja backend/tools/create_sensitive_events.sql",
+          details: err.message,
+        });
+      }
 
       if (totalDefinidos === 0) {
-        cl = 100.0;
-        interpretacao = 'Nenhum evento crítico definido; retornando 100% por convenção.';
-      } else {
-        cl = ((totalCobertos / totalDefinidos) * 100).toFixed(2);
-        const clNum = parseFloat(cl);
-        if (clNum >= 100) {
-          interpretacao = 'Excelente — todos os eventos críticos têm logs registrados.';
-        } else if (clNum >= 90) {
-          interpretacao = 'Bom — cobertura adequada, revisar casos faltantes.';
-        } else if (clNum >= 70) {
-          interpretacao = 'Atenção — falta de registros críticos em várias funcionalidades.';
-        } else {
-          interpretacao = 'Crítico — implementar logging/alerts para eventos sensíveis.';
-        }
+        return res.json({
+          metrica: "Cobertura de Logs de Observabilidade",
+          dados: { totalDefinidos: 0, totalRegistrados: 0, clPercentual: 0 },
+          interpretacao: "Nenhum evento sensível definido (sensitive_events vazio)",
+        });
       }
 
+      // Contar quantos eventos definidos tiveram ao menos um registro no período
+      // Usamos DISTINCT se.event_key para contar eventos diferentes registrados
+      let whereAuditClause = '';
+      if (whereAudit.length) whereAuditClause = `AND ${whereAudit.join(' AND ')}`;
+
+      const valoresJoin = valoresAudit.slice();
+      // adicionar filtros por categoria/nivel usando sensitive_events
+      let filtroSe = 'WHERE se.ativo = TRUE';
+      const valoresSe = [];
+      if (categoria) {
+        filtroSe += ` AND se.categoria = $${valoresAudit.length + valoresSe.length + 1}`;
+        valoresSe.push(categoria);
+      }
+      if (nivelCriticidade) {
+        filtroSe += ` AND se.nivel_criticidade = $${valoresAudit.length + valoresSe.length + 1}`;
+        valoresSe.push(nivelCriticidade);
+      }
+
+      const qNum = `
+        SELECT COUNT(DISTINCT se.event_key) as total_registrados
+        FROM sensitive_events se
+        LEFT JOIN audit_logs al
+          ON UPPER(al.acao) = UPPER(se.event_key)
+          ${whereAuditClause}
+        ${filtroSe}
+      `;
+
+      const paramsNum = valoresAudit.concat(valoresSe);
+      const rNum = await dbClient.query(qNum, paramsNum);
+      const totalRegistrados = parseInt(rNum.rows[0].total_registrados || 0);
+
+      const clPercentual = ((totalRegistrados / totalDefinidos) * 100).toFixed(2);
+
+      let interpretacao = '';
+      const clFloat = parseFloat(clPercentual);
+      if (clFloat >= 100) interpretacao = 'Ideal: todos os eventos críticos estão sendo registrados.';
+      else if (clFloat >= 90) interpretacao = 'Boa cobertura, revisar eventos não registrados.';
+      else if (clFloat >= 70) interpretacao = 'Cobertura parcial; priorizar instrumentação.';
+      else interpretacao = 'Cobertura baixa; instrumentação urgente necessária.';
+
       return res.json({
-        metrica: 'Cobertura de Logs de Observabilidade (CL)',
+        metrica: 'Cobertura de Logs de Observabilidade',
         formula: "(Nº de eventos críticos registrados / Nº total de eventos críticos definidos) × 100",
-        filtros: { perfil: perfil || 'Todos', dataInicio: dataInicio || null, dataFim: dataFim || null },
-        dados: {
-          totalDefinidos,
-          totalCobertos,
-          clPercentual: parseFloat(cl),
-        },
+        periodo: { from: from || null, to: to || null },
+        dados: { totalDefinidos, totalRegistrados, clPercentual: parseFloat(clPercentual) },
         interpretacao,
         tipo: 'Quantitativa - percentual',
       });
     } catch (error) {
-      console.error('[SecurityMetricsController] Erro ao calcular CL:', error);
-      return res.status(500).json({ error: 'Erro ao calcular métrica CL', details: error.message });
+      console.error('[SecurityMetricsController] Erro ao calcular cobertura de logs:', error);
+      return res.status(500).json({ error: 'Erro ao calcular cobertura de logs', details: error.message });
     }
   }
 
