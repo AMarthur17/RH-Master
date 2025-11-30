@@ -12,11 +12,17 @@ Como é implementado (simples)
 - Denominador: contagem total de funcionalidades críticas definidas em `access_rules`.
 
 Endpoint
-- `GET /security-metrics/cl`
-  - Query params (opcionais): `perfil`, `dataInicio`, `dataFim`
+- `GET /security-metrics/log-coverage` (nova)
+  - Query params (opcionais): `from`, `to`, `categoria`
+  - Nota: os parâmetros legados `dataInicio`/`dataFim`/`perfil` continuam aceitos por compatibilidade (rota `/security-metrics/cl`).
   - Protegido por autenticação e permissão `Administrador`.
 
-Exemplo de uso (PowerShell):
+Exemplo de uso (PowerShell) — parâmetros novos:
+```powershell
+curl -H "Authorization: Bearer <TOKEN>" "http://localhost:3000/security-metrics/log-coverage?from=2025-01-01&to=2025-11-26&categoria=FOLHA_PAGAMENTO"
+```
+
+Exemplo legada (compatibilidade):
 ```powershell
 curl -H "Authorization: Bearer <TOKEN>" "http://localhost:3000/security-metrics/cl?dataInicio=2025-01-01&dataFim=2025-11-26"
 ```
@@ -41,6 +47,6 @@ Interpretação (sugestão)
 - < 70% — Crítico — revisar instrumentação de logs
 
 Local do código
-- Controller: `backend/src/controllers/SecurityMetricsController.js` (`calcularCL`)
-- Rotas: `backend/src/routes/security-metrics.js` (`/cl`)
+- Controller: `backend/src/controllers/SecurityMetricsController.js` (`calcularCoberturaLogs`)
+- Rotas: `backend/src/routes/security-metrics.js` (`/log-coverage`) — rota compatível `/cl` mantida
 - Testes unitários: `backend/tests/security-metrics.cl.test.js`

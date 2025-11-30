@@ -161,9 +161,27 @@ Retorna estatísticas gerais de segurança.
 
 #### GET `/detectar-vazamentos`
 Analisa logs de auditoria para detectar padrões suspeitos:
-- Múltiplas tentativas falhas de autenticação
-- Exportações massivas de dados
-- Acessos fora do horário comercial
+
+#### GET `/log-coverage`
+Calcula a Cobertura de Logs de Observabilidade (CL).
+
+**Query Parameters**:
+- `from` (opcional): Data inicial no formato ISO (ex.: `2025-01-01`)
+- `to` (opcional): Data final no formato ISO
+- `categoria` (opcional): Filtrar por categoria de evento sensível
+- `nivelCriticidade` (opcional): Filtrar por nível de criticidade
+
+**Nota de compatibilidade**: a rota legada `/security-metrics/cl` e os parâmetros `dataInicio`/`dataFim`/`perfil` continuam suportados para clientes antigos.
+
+**Exemplo (novo padrão)**:
+```bash
+curl -H "Authorization: Bearer SEU_TOKEN" "http://localhost:5000/api/security-metrics/log-coverage?from=2025-01-01&to=2025-11-26&categoria=FOLHA_PAGAMENTO"
+```
+
+**Exemplo (legado/compatibilidade)**:
+```bash
+curl -H "Authorization: Bearer SEU_TOKEN" "http://localhost:5000/api/security-metrics/cl?dataInicio=2025-01-01&dataFim=2025-11-26"
+```
 
 ---
 

@@ -112,6 +112,21 @@ curl http://localhost:5000/api/security-metrics/detectar-vazamentos ^
   -H "Authorization: Bearer SEU_TOKEN"
 ```
 
+### GET `/api/security-metrics/log-coverage`
+Calcula a Cobertura de Logs de Observabilidade (CL).
+
+**Exemplo (novo padrão):**
+```bash
+curl "http://localhost:5000/api/security-metrics/log-coverage?from=2025-01-01&to=2025-11-26&categoria=FOLHA_PAGAMENTO" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+**Exemplo (legado/compatibilidade):**
+```bash
+curl "http://localhost:5000/api/security-metrics/cl?dataInicio=2025-01-01&dataFim=2025-11-26" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
 ---
 
 ## 🎯 Como a Métrica Funciona

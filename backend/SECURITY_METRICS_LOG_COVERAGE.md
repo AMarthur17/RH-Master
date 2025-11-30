@@ -90,6 +90,7 @@ Opção C — Aproximação por categoria (quando não há lista canônica):
 
 - Endpoint sugerido: `GET /security-metrics/log-coverage`
   - Query params: `from`, `to`, `categoria` (opcional), `nivel_criticidade` (opcional)
+  - Nota de compatibilidade: a rota legada `/security-metrics/cl` e os parâmetros `dataInicio`/`dataFim`/`perfil` continuam suportados para compatibilidade com clientes antigos.
   - Resposta esperada:
 
 ```json

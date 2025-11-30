@@ -150,6 +150,20 @@ router.get(
   SecurityMetricsController.calcularCoberturaLogs
 );
 
+// Rota compatível com versão legada: /security-metrics/cl
+router.get(
+  "/cl",
+  autenticar,
+  verificarPermissao(["Administrador"]),
+  (req, res, next) => {
+    // Normaliza parâmetros legados para os novos nomes esperados pelo controller
+    if (req.query.dataInicio && !req.query.from) req.query.from = req.query.dataInicio;
+    if (req.query.dataFim && !req.query.to) req.query.to = req.query.dataFim;
+    if (req.query.perfil && !req.query.categoria) req.query.categoria = req.query.perfil;
+    return SecurityMetricsController.calcularCoberturaLogs(req, res, next);
+  }
+);
+
 /**
  * @route POST /security-metrics/regras-acesso
  * @desc Registrar ou atualizar uma regra de acesso
