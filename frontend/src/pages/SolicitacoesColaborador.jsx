@@ -98,7 +98,13 @@ export default function SolicitacoesColaborador() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ tipo: tipoSolicitacao, data_inicio: dataInicio, data_fim: dataFim, motivo: motivoSolicitacao }),
+        body: JSON.stringify({ 
+          usuario_id: usuarioId, // Corrigido: enviar o id do usuário
+          tipo: tipoSolicitacao, 
+          data_inicio: dataInicio, 
+          data_fim: dataFim, 
+          motivo: motivoSolicitacao 
+        }),
       });
 
       if (!res.ok) {
