@@ -10,6 +10,27 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
+// Função para validar requisitos de senha
+const validarSenha = (senha) => {
+  const erros = [];
+  if (senha.length < 8) {
+    erros.push("A senha deve ter no mínimo 8 caracteres");
+  }
+  if (!/[A-Z]/.test(senha)) {
+    erros.push("A senha deve conter pelo menos 1 letra maiúscula");
+  }
+  if (!/[a-z]/.test(senha)) {
+    erros.push("A senha deve conter pelo menos 1 letra minúscula");
+  }
+  if (!/[0-9]/.test(senha)) {
+    erros.push("A senha deve conter pelo menos 1 número");
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
+    erros.push("A senha deve conter pelo menos 1 caractere especial (!@#$%^&*...)");
+  }
+  return erros;
+};
+
 // Função para gerar nome da pasta do usuário
 const generateUserFolderName = (userId, userName) => {
   const normalizedName = userName
@@ -53,6 +74,15 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "CPF inválido." });
     }
 
+    // ✅ Validar requisitos de senha
+    const senhaErros = validarSenha(senha);
+    if (senhaErros.length > 0) {
+      return res.status(400).json({ 
+        error: "Senha não atende aos requisitos mínimos",
+        requisitos: senhaErros
+      });
+    }
+
     const hashedSenha = await bcrypt.hash(senha, 10);
 
     const query = `
@@ -92,6 +122,15 @@ router.post(
 
       if (!validarCPF(cpf)) {
         return res.status(400).json({ error: "CPF inválido." });
+      }
+
+      // ✅ Validar requisitos de senha
+      const senhaErros = validarSenha(senha);
+      if (senhaErros.length > 0) {
+        return res.status(400).json({ 
+          error: "Senha não atende aos requisitos mínimos",
+          requisitos: senhaErros
+        });
       }
 
       const hashedSenha = await bcrypt.hash(senha, 10);
@@ -317,6 +356,16 @@ router.put("/:id", autenticar, async (req, res) => {
 
       if (campo === "senha") {
         if (valorNovo.trim() === "") continue;
+        
+        // ✅ Validar requisitos de senha ao atualizar
+        const senhaErros = validarSenha(valorNovo);
+        if (senhaErros.length > 0) {
+          return res.status(400).json({ 
+            error: "Senha não atende aos requisitos mínimos",
+            requisitos: senhaErros
+          });
+        }
+        
         valorNovo = await bcrypt.hash(valorNovo, 10);
       }
 

@@ -1,6 +1,11 @@
 -- RH-Master: init.sql
 -- Arquivo limpo e consistente para uso acadêmico / desenvolvimento.
 
+-- ==============================
+-- EXTENSÕES NECESSÁRIAS
+-- ==============================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- AVISO: os comandos DROP abaixo apagam dados. 
 -- Remova-os se quiser preservar conteúdo existente.
 
