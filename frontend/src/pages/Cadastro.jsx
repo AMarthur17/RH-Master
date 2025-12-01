@@ -73,7 +73,10 @@ export default function Cadastro() {
         return;
       }
 
-      alert("Cadastro realizado com sucesso!");
+      const data = await response.json();
+      alert("Cadastro realizado com sucesso! Por favor, faça login.");
+      
+      // Redireciona para login ao invés de diretamente para a tela
       navigate("/login");
     } catch (err) {
       console.error(err);
@@ -184,7 +187,7 @@ export default function Cadastro() {
             type="button"
             className="btn-gradient"
             style={{ marginTop: "10px" }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
           >
             Voltar
           </button>

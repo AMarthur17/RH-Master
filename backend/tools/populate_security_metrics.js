@@ -283,23 +283,36 @@ async function popularDadosTeste() {
       { perfil: "colaborador", funcionalidade: "VER_PONTOS_PROPRIOS", endpoint: "/api/registro-ponto", metodo: "GET", temRbac: true, nivelRisco: "BAIXO", descricao: "Ver registros de ponto próprios" },
       { perfil: "colaborador", funcionalidade: "SOLICITAR_FERIAS", endpoint: "/api/solicitacoes", metodo: "POST", temRbac: true, nivelRisco: "MEDIO", descricao: "Solicitar férias ou licença" },
       { perfil: "colaborador", funcionalidade: "VER_SOLICITACOES_PROPRIAS", endpoint: "/api/solicitacoes/:usuarioId", metodo: "GET", temRbac: true, nivelRisco: "BAIXO", descricao: "Ver próprias solicitações" },
-      { perfil: "colaborador", funcionalidade: "UPLOAD_DOCUMENTOS", endpoint: "/api/documentos/upload", metodo: "POST", temRbac: false, nivelRisco: "ALTO", descricao: "Upload de documentos pessoais" },
-      { perfil: "colaborador", funcionalidade: "VER_FOLHA_PROPRIA", endpoint: "/api/folha/:usuarioId", metodo: "GET", temRbac: false, nivelRisco: "CRITICO", descricao: "Visualizar própria folha de pagamento" },
+      { perfil: "colaborador", funcionalidade: "UPLOAD_DOCUMENTOS", endpoint: "/api/documentos/:usuario_id", metodo: "POST", temRbac: true, nivelRisco: "ALTO", descricao: "Upload de documentos pessoais" },
+      { perfil: "colaborador", funcionalidade: "VER_FOLHA_PROPRIA", endpoint: "/api/folha/:usuarioId", metodo: "GET", temRbac: true, nivelRisco: "CRITICO", descricao: "Visualizar própria folha de pagamento" },
       { perfil: "colaborador", funcionalidade: "VER_BENEFICIOS_PROPRIOS", endpoint: "/api/beneficios/:usuarioId", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Ver benefícios próprios" },
+      { perfil: "colaborador", funcionalidade: "VER_DOCUMENTOS_COMPARTILHADOS", endpoint: "/api/documentos/compartilhados/:colaborador_id", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Ver documentos compartilhados" },
+      { perfil: "colaborador", funcionalidade: "VER_HORAS_EXTRAS", endpoint: "/api/folha/horas-extras/:usuarioId", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Ver próprias horas extras" },
+      { perfil: "colaborador", funcionalidade: "DOWNLOAD_DOCUMENTO", endpoint: "/api/documentos/:documento_id/download", metodo: "POST", temRbac: true, nivelRisco: "ALTO", descricao: "Download seguro de documentos" },
 
-      // Gerente - Funcionalidades intermediárias
-      { perfil: "gerente", funcionalidade: "VER_EQUIPE", endpoint: "/api/usuario/equipe", metodo: "GET", temRbac: false, nivelRisco: "MEDIO", descricao: "Visualizar usuários da equipe" },
-      { perfil: "gerente", funcionalidade: "APROVAR_FERIAS_EQUIPE", endpoint: "/api/solicitacoes/:id/aprovar", metodo: "PUT", temRbac: false, nivelRisco: "ALTO", descricao: "Aprovar férias da equipe" },
-      { perfil: "gerente", funcionalidade: "VER_PONTOS_EQUIPE", endpoint: "/api/registro-ponto/equipe", metodo: "GET", temRbac: false, nivelRisco: "MEDIO", descricao: "Ver pontos da equipe" },
-      { perfil: "gerente", funcionalidade: "GERAR_RELATORIO_EQUIPE", endpoint: "/api/relatorios/equipe", metodo: "GET", temRbac: false, nivelRisco: "ALTO", descricao: "Gerar relatórios da equipe" },
-      { perfil: "gerente", funcionalidade: "EDITAR_PONTO_EQUIPE", endpoint: "/api/registro-ponto/:id", metodo: "PUT", temRbac: false, nivelRisco: "ALTO", descricao: "Editar registros de ponto da equipe" },
+      // Gerente - Funcionalidades intermediárias (TODAS COM RBAC)
+      { perfil: "gerente", funcionalidade: "VER_EQUIPE", endpoint: "/api/usuario", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Visualizar usuários da equipe" },
+      { perfil: "gerente", funcionalidade: "APROVAR_FERIAS_EQUIPE", endpoint: "/api/solicitacoes/:id/decidir", metodo: "PUT", temRbac: true, nivelRisco: "ALTO", descricao: "Aprovar férias da equipe" },
+      { perfil: "gerente", funcionalidade: "VER_PONTOS_EQUIPE", endpoint: "/api/registro-ponto/equipe/pontos", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Ver pontos da equipe" },
+      { perfil: "gerente", funcionalidade: "GERAR_RELATORIO_PRESENCA", endpoint: "/api/relatorios/presenca", metodo: "GET", temRbac: true, nivelRisco: "ALTO", descricao: "Gerar relatórios de presença" },
+      { perfil: "gerente", funcionalidade: "GERAR_RELATORIO_BENEFICIOS", endpoint: "/api/relatorios/beneficios", metodo: "GET", temRbac: true, nivelRisco: "ALTO", descricao: "Gerar relatórios de benefícios" },
+      { perfil: "gerente", funcionalidade: "EDITAR_PONTO_EQUIPE", endpoint: "/api/registro-ponto/:id", metodo: "PUT", temRbac: true, nivelRisco: "ALTO", descricao: "Editar registros de ponto da equipe" },
+      { perfil: "gerente", funcionalidade: "VER_RELATORIO_BENEFICIOS", endpoint: "/api/beneficios/:usuario_id/relatorio", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Ver relatório de benefícios da equipe" },
+      { perfil: "gerente", funcionalidade: "AGENDAR_RELATORIOS", endpoint: "/api/schedules", metodo: "POST", temRbac: true, nivelRisco: "MEDIO", descricao: "Agendar geração automática de relatórios" },
 
-      // RH - Funcionalidades de recursos humanos
-      { perfil: "rh", funcionalidade: "CADASTRAR_COLABORADOR", endpoint: "/api/usuario", metodo: "POST", temRbac: false, nivelRisco: "ALTO", descricao: "Cadastrar novos colaboradores" },
-      { perfil: "rh", funcionalidade: "GERENCIAR_BENEFICIOS_GERAL", endpoint: "/api/beneficios", metodo: "POST", temRbac: false, nivelRisco: "ALTO", descricao: "Gerenciar benefícios de todos" },
-      { perfil: "rh", funcionalidade: "PROCESSAR_FOLHA", endpoint: "/api/folha/processar", metodo: "POST", temRbac: false, nivelRisco: "CRITICO", descricao: "Processar folha de pagamento" },
+      // RH - Funcionalidades de recursos humanos (TODAS COM RBAC)
+      { perfil: "rh", funcionalidade: "CADASTRAR_COLABORADOR", endpoint: "/api/usuario/cadastrar", metodo: "POST", temRbac: true, nivelRisco: "ALTO", descricao: "Cadastrar novos colaboradores" },
+      { perfil: "rh", funcionalidade: "BUSCAR_FUNCIONARIOS", endpoint: "/api/usuario", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Buscar funcionários" },
+      { perfil: "rh", funcionalidade: "GERENCIAR_BENEFICIOS_CRIAR", endpoint: "/api/beneficios/:usuario_id", metodo: "POST", temRbac: true, nivelRisco: "ALTO", descricao: "Criar benefícios" },
+      { perfil: "rh", funcionalidade: "GERENCIAR_BENEFICIOS_EDITAR", endpoint: "/api/beneficios/:id", metodo: "PUT", temRbac: true, nivelRisco: "ALTO", descricao: "Editar benefícios" },
+      { perfil: "rh", funcionalidade: "GERENCIAR_BENEFICIOS_REMOVER", endpoint: "/api/beneficios/:id", metodo: "DELETE", temRbac: true, nivelRisco: "ALTO", descricao: "Remover benefícios" },
+      { perfil: "rh", funcionalidade: "PROCESSAR_FOLHA", endpoint: "/api/folha/gerar", metodo: "POST", temRbac: true, nivelRisco: "CRITICO", descricao: "Processar folha de pagamento" },
       { perfil: "rh", funcionalidade: "VER_TODAS_SOLICITACOES", endpoint: "/api/solicitacoes", metodo: "GET", temRbac: true, nivelRisco: "MEDIO", descricao: "Visualizar todas as solicitações" },
-      { perfil: "rh", funcionalidade: "GERAR_RELATORIO_RH", endpoint: "/api/relatorios/rh", metodo: "GET", temRbac: false, nivelRisco: "ALTO", descricao: "Gerar relatórios de RH" },
+      { perfil: "rh", funcionalidade: "APROVAR_SOLICITACOES", endpoint: "/api/solicitacoes/:id/decidir", metodo: "PUT", temRbac: true, nivelRisco: "ALTO", descricao: "Aprovar solicitações de férias" },
+      { perfil: "rh", funcionalidade: "GERAR_RELATORIO_FUNCIONARIOS", endpoint: "/api/relatorios/funcionarios", metodo: "GET", temRbac: true, nivelRisco: "ALTO", descricao: "Gerar relatório de funcionários" },
+      { perfil: "rh", funcionalidade: "GERENCIAR_DOCUMENTOS_PERMISSAO", endpoint: "/api/documentos/:documento_id/permissao", metodo: "POST", temRbac: true, nivelRisco: "ALTO", descricao: "Gerenciar permissões de documentos" },
+      { perfil: "rh", funcionalidade: "GERENCIAR_PONTOS_EQUIPE", endpoint: "/api/registro-ponto/:id", metodo: "PUT", temRbac: true, nivelRisco: "ALTO", descricao: "Gerenciar pontos da equipe" },
+      { perfil: "rh", funcionalidade: "AGENDAR_RELATORIOS", endpoint: "/api/schedules", metodo: "POST", temRbac: true, nivelRisco: "MEDIO", descricao: "Agendar geração automática de relatórios" },
     ];
 
     for (const regra of regrasAcesso) {

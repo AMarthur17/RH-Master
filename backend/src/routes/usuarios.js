@@ -201,7 +201,7 @@ router.post("/login", async (req, res) => {
 router.post(
   "/validar-senha",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "gerente", "rh"]),
   async (req, res) => {
     const usuarioId = req.user.id;
     const { senha } = req.body;
@@ -237,7 +237,7 @@ router.post(
 router.get(
   "/",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "gerente", "rh"]),
   async (req, res) => {
     try {
       const { nome, empresa } = req.query;
@@ -267,7 +267,7 @@ router.get(
 router.get(
   "/faltas-mes",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "gerente", "rh"]),
   async (req, res) => {
     try {
       const { empresa } = req.query;
@@ -328,9 +328,18 @@ router.get(
 // Atualizar usuário e registrar histórico
 router.put("/:id", autenticar, async (req, res) => {
   try {
-    const usuarioId = req.params.id;
+    const usuarioId = parseInt(req.params.id);
     const { nome, cpf, empresa, idade, email, senha, cargo, alterado_por } =
       req.body;
+
+    // Verificar se o usuário pode editar este perfil
+    const perfilUsuario = (req.user?.cargo || req.user?.perfil || "").toLowerCase();
+    const isAdmin = perfilUsuario === "admin" || perfilUsuario === "administrador";
+    const isOwner = req.user?.id === usuarioId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Acesso negado. Você só pode editar seu próprio perfil." });
+    }
 
     const oldUser = await db.query("SELECT * FROM usuario WHERE id = $1", [
       usuarioId,

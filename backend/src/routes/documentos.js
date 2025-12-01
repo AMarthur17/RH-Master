@@ -157,7 +157,7 @@ router.post(
 router.post(
   "/:documento_id/permissao",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "rh"]),
   async (req, res) => {
     const documento_id = Number(req.params.documento_id);
     const { usuario_id, pode_visualizar, pode_editar, pode_excluir } = req.body;
@@ -254,7 +254,7 @@ router.post("/:documento_id/download", autenticar, async (req, res) => {
 router.delete(
   "/:documento_id",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "rh"]),
   async (req, res) => {
     const { documento_id } = req.params;
 

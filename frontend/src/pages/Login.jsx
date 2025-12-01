@@ -71,7 +71,7 @@ export default function Login() {
         <button
           style={{ marginTop: "20px" }}
           className="btn-gradient"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
         >
           Voltar
         </button>

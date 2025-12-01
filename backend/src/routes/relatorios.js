@@ -9,11 +9,11 @@ const router = express.Router();
 // Todas as rotas requerem autenticação
 router.use(autenticar);
 
-// Rotas de admin
-router.get('/funcionarios', permitir(['admin', 'administrador']), (req, res) => RelatoriosController.gerarRelatorioFuncionarios(req, res));
-router.get('/presenca', permitir(['admin', 'administrador']), (req, res) => RelatoriosController.gerarRelatorioPresenca(req, res));
-router.get('/beneficios', permitir(['admin', 'administrador']), (req, res) => RelatoriosController.gerarRelatorioBeneficios(req, res));
-router.get('/folha', permitir(['admin', 'administrador']), (req, res) => RelatoriosController.gerarRelatorioFolha(req, res));
+// Rotas de admin, gerente e rh
+router.get('/funcionarios', permitir(['admin', 'administrador', 'rh']), (req, res) => RelatoriosController.gerarRelatorioFuncionarios(req, res));
+router.get('/presenca', permitir(['admin', 'administrador', 'gerente', 'rh']), (req, res) => RelatoriosController.gerarRelatorioPresenca(req, res));
+router.get('/beneficios', permitir(['admin', 'administrador', 'gerente', 'rh']), (req, res) => RelatoriosController.gerarRelatorioBeneficios(req, res));
+router.get('/folha', permitir(['admin', 'administrador', 'rh']), (req, res) => RelatoriosController.gerarRelatorioFolha(req, res));
 
 // Relatório de equipe para gerentes
 router.get(

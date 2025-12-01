@@ -6,6 +6,89 @@
 
 ---
 
+## 🚀 Início Rápido
+
+### Pré-requisitos
+
+Antes de usar o sistema de auditoria, é necessário:
+
+1. **Instalar a extensão pgcrypto** (necessária para hashing SHA-256):
+```bash
+docker exec -it rh_master_db psql -U postgres -d rh_master -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+```
+
+2. **Popular dados de exemplo** (opcional, para testes):
+```bash
+# Opção 1: Popular dados de auditoria com usuários existentes
+docker exec -it rh_master_backend node tools/populate_audit_data.js
+
+# Opção 2: Inserir amostras básicas
+docker exec -it rh_master_backend node tools/insert_audit_samples.js
+```
+
+### Testando a API no Postman
+
+1. **Obter token de autenticação**:
+```http
+POST http://localhost:3000/usuario/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "senha": "SuaSenha123!"
+}
+```
+
+2. **Consultar logs** (usando o token obtido):
+```http
+GET http://localhost:3000/audit/logs
+Authorization: Bearer {seu_token_jwt}
+```
+
+3. **Verificar quantidade de logs**:
+```bash
+docker exec -it rh_master_db psql -U postgres -d rh_master -c "SELECT COUNT(*) FROM audit_logs;"
+```
+
+### Respostas Esperadas
+
+✅ **Com dados populados**: Retorna array de logs com paginação
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "usuario_nome": "Admin",
+      "acao": "LOGIN",
+      "categoria": "AUTENTICACAO",
+      "resultado": "SUCESSO",
+      "data_hora": "2025-12-01T10:30:00.000Z"
+    }
+  ],
+  "paginacao": {
+    "total": 30,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1
+  }
+}
+```
+
+❌ **Sem dados**: Retorna array vazio
+```json
+{
+  "logs": [],
+  "paginacao": {
+    "total": 0,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 0
+  }
+}
+```
+
+---
+
 ## 📋 Visão Geral
 
 O sistema de auditoria captura automaticamente ações sensíveis no sistema RH-Master, armazenando informações detalhadas sobre:

@@ -18,3 +18,4 @@
 {"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2085.7000000476837,"usuario":null,"timestamp":"2025-10-27T20:47:11.923Z","alert":"TEMPO_ALTO","threshold":2000}
 {"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2526.899999976158,"usuario":null,"timestamp":"2025-10-27T20:55:46.010Z","alert":"TEMPO_ALTO","threshold":2000}
 {"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2153.900000035763,"usuario":null,"timestamp":"2025-10-27T21:17:34.190Z","alert":"TEMPO_ALTO","threshold":2000}
+{"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":2083,"usuario":null,"timestamp":"2025-12-01T13:43:15.813Z","alert":"TEMPO_ALTO","threshold":2000}

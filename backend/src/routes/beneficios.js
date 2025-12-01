@@ -21,7 +21,7 @@ const validarUsuario = async (usuarioId) => {
 router.get(
   "/:usuario_id/relatorio",
   autenticar,
-  permitir(["admin", "administrador"]),
+  permitir(["admin", "administrador", "gerente", "rh"]),
   async (req, res) => {
     try {
       const usuarioId = Number(req.params.usuario_id);

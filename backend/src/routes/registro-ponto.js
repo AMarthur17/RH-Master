@@ -92,8 +92,8 @@ router.get("/:usuario_id", autenticar, async (req, res) => {
   }
 });
 
-// Atualizar registro de ponto (administradores e gerentes)
-router.put("/:id", autenticar, permitir(["admin", "administrador", "gerente"]), async (req, res) => {
+// Atualizar registro de ponto (administradores, gerentes e rh)
+router.put("/:id", autenticar, permitir(["admin", "administrador", "gerente", "rh"]), async (req, res) => {
   try {
     const registroId = req.params.id;
     const { tipo, data_hora, motivo } = req.body; // data_hora opcional (ISO string)
@@ -129,11 +129,11 @@ router.put("/:id", autenticar, permitir(["admin", "administrador", "gerente"]), 
   }
 });
 
-// Rota para gerente/admin ver pontos da equipe
+// Rota para gerente/admin/rh ver pontos da equipe
 router.get(
   "/equipe/pontos",
   autenticar,
-  permitir(["admin", "administrador", "gerente"]),
+  permitir(["admin", "administrador", "gerente", "rh"]),
   async (req, res) => {
     try {
       const { data_inicio, data_fim } = req.query;

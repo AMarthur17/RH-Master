@@ -2,18 +2,30 @@
 
 ## Início Rápido em 5 Minutos
 
-### 1️⃣ Aplicar Schema do Banco de Dados
+### 1️⃣ Instalar Extensão pgcrypto (Obrigatório)
+
+A extensão `pgcrypto` é necessária para o cálculo de hash SHA-256 dos logs.
+
+```bash
+docker exec -it rh_master_db psql -U postgres -d rh_master -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+```
+
+**Saída esperada:**
+```
+CREATE EXTENSION
+```
+
+> ⚠️ **Importante:** Execute este comando antes de popular dados ou usar o sistema de auditoria.
+
+### 2️⃣ Aplicar Schema do Banco de Dados
 
 ```bash
 # Se estiver usando Docker
 docker-compose down
 docker-compose up -d
-
-# Ou conecte ao PostgreSQL e execute:
-psql -U postgres -d rh_master -f db/init.sql
 ```
 
-### 2️⃣ Reiniciar o Backend
+### 3️⃣ Reiniciar o Backend
 
 ```bash
 cd backend
@@ -27,14 +39,24 @@ Você verá:
 🔒 Sistema de auditoria ativado
 ```
 
-### 3️⃣ Popular Dados de Exemplo (Opcional)
+### 4️⃣ Popular Dados de Exemplo (Opcional)
 
+**Opção 1: Popular com dados completos (recomendado)**
 ```bash
-cd backend
-node tools/populate_audit_data.js
+docker exec -it rh_master_backend node tools/populate_audit_data.js
 ```
 
-### 4️⃣ Testar as APIs
+**Opção 2: Inserir apenas amostras básicas**
+```bash
+docker exec -it rh_master_backend node tools/insert_audit_samples.js
+```
+
+**Verificar dados criados:**
+```bash
+docker exec -it rh_master_db psql -U postgres -d rh_master -c "SELECT COUNT(*) FROM audit_logs;"
+```
+
+### 5️⃣ Testar as APIs
 
 **Obter Token de Administrador:**
 ```bash

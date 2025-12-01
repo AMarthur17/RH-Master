@@ -23,14 +23,25 @@ export default function EditarPerfil() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ nome, email, cargo, empresa }),
+        body: JSON.stringify({ 
+          nome, 
+          email, 
+          cargo, 
+          empresa, 
+          alterado_por: usuario.id 
+        }),
       });
-      if (!res.ok) throw new Error("Erro ao atualizar usuário");
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Erro ao atualizar usuário");
+      }
+      
       alert("Perfil atualizado com sucesso!");
       navigate(-1);
     } catch (err) {
       console.error(err);
-      alert("Erro ao atualizar perfil.");
+      alert(err.message || "Erro ao atualizar perfil.");
     }
   };
 
