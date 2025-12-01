@@ -1,11 +1,6 @@
 -- RH-Master: init.sql
 -- Arquivo limpo e consistente para uso acadêmico / desenvolvimento.
 
--- ==============================
--- EXTENSÕES NECESSÁRIAS
--- ==============================
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 -- AVISO: os comandos DROP abaixo apagam dados. 
 -- Remova-os se quiser preservar conteúdo existente.
 
@@ -67,7 +62,10 @@ CREATE TABLE IF NOT EXISTS registro_ponto (
   usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
   tipo VARCHAR(50) NOT NULL,
   data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  motivo TEXT
+  motivo TEXT,
+  hora_inicio TIME,
+  hora_fim TIME,
+  tipo_jornada VARCHAR(20) DEFAULT 'normal'
 );
 
 -- ==============================
@@ -101,6 +99,10 @@ CREATE TABLE IF NOT EXISTS folha_pagamento (
   total_pontos INTEGER DEFAULT 0,
   valor NUMERIC(12,2) DEFAULT 0,
   status VARCHAR(50) DEFAULT 'pendente',
+  horas_extras NUMERIC(10,2) DEFAULT 0,
+  valor_extras NUMERIC(12,2) DEFAULT 0,
+  horas_noturnas NUMERIC(10,2) DEFAULT 0,
+  valor_noturnas NUMERIC(12,2) DEFAULT 0,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (usuario_id, mes, ano)

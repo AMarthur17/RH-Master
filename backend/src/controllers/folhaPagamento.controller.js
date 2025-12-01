@@ -1,4 +1,5 @@
 import db from "../db.js"; // db é o Pool do PostgreSQL
+import horasExtraService from "../services/horasExtraService.js";
 
 // Gerar folha de pagamento (todos ou usuário específico)
 export async function gerarFolha(req, res) {
@@ -34,13 +35,29 @@ export async function gerarFolha(req, res) {
       const totalPontos = parseInt(pontosRows[0].total_pontos || 0);
       const valor = Math.floor(totalPontos / 2) * 100; // 100 reais a cada 2 pontos
 
-      // Inserir folha
+      // Calcular horas extras e noturnas
+      let horasExtras = 0;
+      let valorExtras = 0;
+      let horasNoturnas = 0;
+      let valorNoturnas = 0;
+
+      try {
+        const calculos = await horasExtraService.calcularHorasExtras(u.id, mes, ano);
+        horasExtras = calculos.horasExtras;
+        valorExtras = calculos.valorExtras;
+        horasNoturnas = calculos.horasNoturnas;
+        valorNoturnas = calculos.valorNoturnas;
+      } catch (err) {
+        console.warn(`Aviso ao calcular horas extras para usuário ${u.id}:`, err.message);
+      }
+
+      // Inserir folha com horas extras e noturnas
       const { rows: folhaRows } = await db.query(
         `INSERT INTO folha_pagamento
-         (usuario_id, mes, ano, salario_base, total_pontos, valor, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (usuario_id, mes, ano, salario_base, total_pontos, valor, horas_extras, valor_extras, horas_noturnas, valor_noturnas, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING id`,
-        [u.id, mes, ano, 0, totalPontos, valor, "pendente"]
+        [u.id, mes, ano, 0, totalPontos, valor, horasExtras, valorExtras, horasNoturnas, valorNoturnas, "pendente"]
       );
 
       folhasCriadas.push({
@@ -48,6 +65,10 @@ export async function gerarFolha(req, res) {
         folhaId: folhaRows[0].id,
         totalPontos,
         valor,
+        horasExtras,
+        valorExtras,
+        horasNoturnas,
+        valorNoturnas,
       });
     }
 
@@ -79,7 +100,9 @@ export async function getFolhaUsuario(req, res) {
     }
 
     let query = `
-      SELECT id, usuario_id, mes, ano, salario_base, total_pontos, valor, status, criado_em, atualizado_em
+      SELECT id, usuario_id, mes, ano, salario_base, total_pontos, valor, 
+             horas_extras, valor_extras, horas_noturnas, valor_noturnas, 
+             status, criado_em, atualizado_em
       FROM folha_pagamento
       WHERE usuario_id = $1
     `;

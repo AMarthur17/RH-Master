@@ -201,3 +201,8 @@
 {"tela":"FolhaPagamento","acao":"enviarPagamentos","tipoRelatorio":null,"tempoRespostaMs":1945,"usuario":null,"timestamp":"2025-11-14T14:47:30.000Z"}
 {"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":105.5,"usuario":1,"timestamp":"2025-11-26T17:30:00.694Z"}
 {"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":88.5,"usuario":1,"timestamp":"2025-11-26T19:02:54.008Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":56.5,"usuario":1,"timestamp":"2025-12-01T12:01:30.930Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":52.399999998509884,"usuario":1,"timestamp":"2025-12-01T12:01:49.560Z"}
+{"tela":"TelaAdministrador","acao":"gerarRelatorio","tipoRelatorio":"lista","tempoRespostaMs":79.29999999701977,"usuario":1,"timestamp":"2025-12-01T12:04:54.511Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":74.80000000447035,"usuario":1,"timestamp":"2025-12-01T12:05:13.465Z"}
+{"tela":"TelaAdministrador","acao":"buscarUsuarios","tipoRelatorio":null,"tempoRespostaMs":88.70000000298023,"usuario":4,"timestamp":"2025-12-01T12:07:32.090Z"}
